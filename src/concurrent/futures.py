@@ -110,12 +110,20 @@ class PythonicQFuture(QObject, Future):
                 raise FutureTimeoutError()
 
     def exception(self, timeout: Optional[PYTHON_TIME] = None) -> Optional[BaseException]:
-        if not self._cond.wait(timeout=timeout):
-            raise FutureTimeoutError
         with self._cond:
             if self._state in [FutureStatus.CANCELLED, FutureStatus.CANCELLED_AND_NOTIFIED]:
-                raise CancelledError
-            return self._exception
+                raise CancelledError()
+            elif self._state == FutureStatus.FINISHED:
+                return self._exception
+
+            self._cond.wait(timeout=timeout)
+
+            if self._state in [FutureStatus.CANCELLED, FutureStatus.CANCELLED_AND_NOTIFIED]:
+                raise CancelledError()
+            elif self._state == FutureStatus.FINISHED:
+                return self._exception
+            else:
+                raise TimeoutError()
 
     def add_done_callback(self, fn: Callable[["PythonicQFuture"], Any]) -> None:
         with self._cond:

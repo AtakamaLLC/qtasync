@@ -89,3 +89,15 @@ class TestPythonicQFuture(TestCase):
         future = executor.submit(fn)
 
         self.assertEqual(2, future.result(timeout=3))
+
+    def test_exception(self):
+        executor = QThreadPoolExecutor()
+
+        def fn():
+            raise RuntimeError
+
+        future = executor.submit(fn)
+
+        self.assertIsInstance(future.exception(timeout=1), RuntimeError)
+        with self.assertRaises(RuntimeError):
+            future.result(timeout=1)
