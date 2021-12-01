@@ -48,7 +48,7 @@ class _QRunnable(QRunnable):
 
 
 class PythonicQFuture(QObject, Future):
-    _cancelled: SIGNAL_TYPE = Signal()
+    _finished: SIGNAL_TYPE = Signal()
 
     def __init__(self, parent: "QObject" = None):
         super().__init__(parent=parent)
@@ -128,7 +128,7 @@ class PythonicQFuture(QObject, Future):
     def add_done_callback(self, fn: Callable[["PythonicQFuture"], Any]) -> None:
         with self._cond:
             if not self._state in [FutureStatus.CANCELLED, FutureStatus.CANCELLED_AND_NOTIFIED, FutureStatus.FINISHED]:
-                self.finished.connect(fn)
+                self._finished.connect(lambda: fn(self))
                 return
 
         try:
@@ -156,6 +156,7 @@ class PythonicQFuture(QObject, Future):
             self._result = result
             self._state = FutureStatus.FINISHED
             self._cond.notify_all()
+            self._finished.emit()
 
     def set_exception(self, exception: Optional[BaseException]) -> None:
         with self._cond:
@@ -164,6 +165,7 @@ class PythonicQFuture(QObject, Future):
             self._exception = exception
             self._state = FutureStatus.FINISHED
             self._cond.notify_all()
+            self._finished.emit()
 
 
 class QThreadPoolExecutor(Executor):

@@ -101,3 +101,15 @@ class TestPythonicQFuture(TestCase):
         self.assertIsInstance(future.exception(timeout=1), RuntimeError)
         with self.assertRaises(RuntimeError):
             future.result(timeout=1)
+
+    def test_done_callback(self):
+        executor = QThreadPoolExecutor()
+        mutex = PythonicQMutex()
+        mutex.lock()
+
+        def fn():
+            mutex.unlock()
+            return 3
+
+        future = executor.submit(fn)
+        future.add_done_callback()
