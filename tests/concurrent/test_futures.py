@@ -106,10 +106,33 @@ class TestPythonicQFuture(TestCase):
         executor = QThreadPoolExecutor()
         mutex = PythonicQMutex()
         mutex.lock()
+        did_callback = False
 
         def fn():
-            mutex.unlock()
-            return 3
+            with mutex:
+                return 3
+
+        def on_done(f: "PythonicQFuture"):
+            nonlocal did_callback
+            self.assertEqual(3, f.result())
+            did_callback = True
 
         future = executor.submit(fn)
-        future.add_done_callback()
+        # Case 1: Callback added before future finished
+        future.add_done_callback(on_done)
+        mutex.unlock()
+        # Events must be processed so that the finished signal is emitted and processed
+        self.assertEqual(3, future.result(timeout=1))
+        process_events(self.qapp)
+        self.assertTrue(did_callback)
+
+        # Case 2: Callback added after future finished
+        did_callback2 = False
+
+        def after_done(f: "PythonicQFuture"):
+            nonlocal did_callback2
+            self.assertEqual(3, f.result())
+            did_callback2 = True
+
+        future.add_done_callback(after_done)
+        self.assertTrue(did_callback2)
