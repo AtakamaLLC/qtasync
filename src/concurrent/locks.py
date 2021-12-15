@@ -97,5 +97,3 @@ class QThreadEvent(QObject):
                 return True
 
         return self._cond.wait(timeout)
-
-
