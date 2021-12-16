@@ -4,6 +4,8 @@ import subprocess
 import socket
 import functools
 import time
+import inspect
+import types
 from enum import Enum
 from typing import TYPE_CHECKING, Callable, Any, Optional, Union, Sequence, Dict
 from concurrent.futures import Executor, Future, CancelledError, InvalidStateError
@@ -240,11 +242,20 @@ class QThreadPoolExecutor(Executor):
         with self._shutdown_mutex:
             self._is_shutdown = True
 
-        if cancel_futures:
-            self._pool.clear()
+            if cancel_futures:
+                self._pool.clear()
 
         if wait:
             self._pool.waitForDone()
+
+    def __enter__(self):
+        with self._shutdown_mutex:
+            if self._is_shutdown:
+                raise RuntimeError("QThreadPoolExecutor has been shut down already")
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.shutdown()
 
 
 # Based partiall on https://github.com/CabbageDevelopment/qasync/blob/master/qasync/__init__.py
@@ -290,7 +301,7 @@ class PythonicQEventLoop(asyncio.AbstractEventLoop):
 
     def run_until_complete(self, future: Union["PythonicQFuture", "CoroutineType"]):
         self._assert_not_running()
-        fut = asyncio.ensure_future(future, loop=self)
+        fut = ensure_future(future, loop=self)
         fut.add_done_callback(lambda _: self.stop)
         self.run_forever()
         return fut.result()
@@ -370,8 +381,11 @@ class PythonicQEventLoop(asyncio.AbstractEventLoop):
         raise NotImplementedError
 
     async def run_in_executor(
-        self, executor: Optional["Executor"], func: Callable, *args
-    ) -> "Future":
+        self,
+        executor: Optional[Union["QThreadPoolExecutor", "Executor"]],
+        func: Callable,
+        *args,
+    ) -> "asyncio.Future":
         executor = executor or self._executor
         return asyncio.wrap_future(executor.submit(func, *args), loop=self)
 
@@ -613,3 +627,34 @@ class QHandle(asyncio.Handle):
 
     def cancel(self):
         self._timer.cancel()
+
+
+def ensure_future(coro_or_future, *, loop=None):
+    """Wrap a coroutine or an awaitable in a future.
+
+    If the argument is a Future, it is returned directly.
+    """
+    if asyncio.coroutines.iscoroutine(coro_or_future):
+        if loop is None:
+            loop = asyncio.events.get_event_loop()
+        task = loop.create_task(coro_or_future)
+        return task
+    elif asyncio.futures.isfuture(coro_or_future):
+        # if loop is not None and loop is not asyncio.futures._get_loop(coro_or_future):
+        #     raise ValueError('The future belongs to a different loop than '
+        #                      'the one specified as the loop argument')
+        return coro_or_future
+    elif inspect.isawaitable(coro_or_future):
+        return ensure_future(_wrap_awaitable(coro_or_future), loop=loop)
+    else:
+        raise TypeError("An asyncio.Future, a coroutine or an awaitable is " "required")
+
+
+@types.coroutine
+def _wrap_awaitable(awaitable):
+    """Helper for asyncio.ensure_future().
+
+    Wraps awaitable (an object with __await__) into a coroutine
+    that will later be wrapped in a Task by ensure_future().
+    """
+    return (yield from awaitable.__await__())
