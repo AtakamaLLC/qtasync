@@ -171,7 +171,7 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
         self._signal_safe_callbacks = []
 
         selector = _Selector(self)
-        asyncio.SelectorEventLoop.__init__(self, selector)
+        super().__init__(self, selector=selector)
 
     def _before_run_forever(self):
         pass

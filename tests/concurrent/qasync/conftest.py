@@ -14,9 +14,9 @@ logging.basicConfig(
 
 
 if os.name == "nt":
-    collect_ignore = ["qasync/_unix.py"]
+    collect_ignore = ["src/concurrent/qasync/_unix.py"]
 else:
-    collect_ignore = ["qasync/_windows.py"]
+    collect_ignore = ["src/concurrent/qasync/_windows.py"]
 
 
 @fixture(scope="session")
