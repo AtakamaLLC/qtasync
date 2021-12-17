@@ -21,6 +21,6 @@ else:
 
 @fixture(scope="session")
 def application():
-    from src.concurrent.qasync import QtCore
+    from src.env import QCoreApplication
 
-    return QtCore.QCoreApplication([])
+    return QCoreApplication()

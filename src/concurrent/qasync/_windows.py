@@ -17,7 +17,8 @@ except ImportError:  # noqa
 
 import math
 
-from src.concurrent.qasync import QtCore, _make_signaller
+from src.concurrent.qasync import _make_signaller
+from ...env import QMutex, QMutexLocker, QThread, QSemaphore
 from ._common import with_logger
 
 UINT32_MAX = 0xFFFFFFFF
@@ -30,7 +31,7 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
     def __init__(self):
         super().__init__(_IocpProactor())
 
-        self.__event_signaller = _make_signaller(QtCore, list)
+        self.__event_signaller = _make_signaller(list)
         self.__event_signal = self.__event_signaller.signal
         self.__event_signal.connect(self._process_events)
         self.__event_poller = _EventPoller(self.__event_signal)
@@ -61,7 +62,7 @@ class _IocpProactor(windows_events.IocpProactor):
     def __init__(self):
         self.__events = []
         super(_IocpProactor, self).__init__()
-        self._lock = QtCore.QMutex()
+        self._lock = QMutex()
 
     def select(self, timeout=None):
         """Override in order to handle events in a threadsafe manner."""
@@ -76,11 +77,11 @@ class _IocpProactor(windows_events.IocpProactor):
         super(_IocpProactor, self).close()
 
     def recv(self, conn, nbytes, flags=0):
-        with QtCore.QMutexLocker(self._lock):
+        with QMutexLocker(self._lock):
             return super(_IocpProactor, self).recv(conn, nbytes, flags)
 
     def send(self, conn, buf, flags=0):
-        with QtCore.QMutexLocker(self._lock):
+        with QMutexLocker(self._lock):
             return super(_IocpProactor, self).send(conn, buf, flags)
 
     def _poll(self, timeout=None):
@@ -96,7 +97,7 @@ class _IocpProactor(windows_events.IocpProactor):
             if ms >= UINT32_MAX:
                 raise ValueError("timeout too big")
 
-        with QtCore.QMutexLocker(self._lock):
+        with QMutexLocker(self._lock):
             while True:
                 # self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
                 #     ms, threading.get_ident()))
@@ -124,29 +125,29 @@ class _IocpProactor(windows_events.IocpProactor):
                 ms = 0
 
     def _wait_for_handle(self, handle, timeout, _is_cancel):
-        with QtCore.QMutexLocker(self._lock):
+        with QMutexLocker(self._lock):
             return super(_IocpProactor, self)._wait_for_handle(
                 handle, timeout, _is_cancel
             )
 
     def accept(self, listener):
-        with QtCore.QMutexLocker(self._lock):
+        with QMutexLocker(self._lock):
             return super(_IocpProactor, self).accept(listener)
 
     def connect(self, conn, address):
-        with QtCore.QMutexLocker(self._lock):
+        with QMutexLocker(self._lock):
             return super(_IocpProactor, self).connect(conn, address)
 
 
 @with_logger
-class _EventWorker(QtCore.QThread):
+class _EventWorker(QThread):
     def __init__(self, proactor, parent):
         super().__init__()
 
         self.__stop = False
         self.__proactor = proactor
         self.__sig_events = parent.sig_events
-        self.__semaphore = QtCore.QSemaphore()
+        self.__semaphore = QSemaphore()
 
     def start(self):
         super().start()

@@ -32,105 +32,106 @@ from abc import ABC
 
 from src.concurrent.futures import QThreadPoolExecutor
 
+from ...env import QCoreApplication, Slot, Signal, QObject, QSocketNotifier
 from ...types.unbound import SIGNAL_TYPE
 from ._common import with_logger  # noqa
 
 
 log = logging.getLogger(__name__)
 
-QtModule = None
-QtModuleName = None
+# QtModule = None
+# QtModuleName = None
+#
+# # If QT_API env variable is given, use that or fail trying
+# qtapi_env = os.getenv("QT_API", "").strip().lower()
+# if qtapi_env:
+#     env_to_mod_map = {
+#         "pyqt5": "PyQt5",
+#         "pyqt6": "PyQt6",
+#         "pyside6": "PySide6",
+#         "pyside2": "PySide2",
+#     }
+#     if qtapi_env in env_to_mod_map:
+#         QtModuleName = env_to_mod_map[qtapi_env]
+#     else:
+#         raise ImportError(
+#             "QT_API environment variable set ({}) but not one of [{}].".format(
+#                 qtapi_env, ", ".join(env_to_mod_map.keys())
+#             )
+#         )
+#
+#     log.info("Forcing use of {} as Qt Implementation".format(QtModuleName))
+#     QtModule = importlib.import_module(QtModuleName)
+#
+# # If a Qt lib is already imported, use that
+# if not QtModule:
+#     for QtModuleName in ("PyQt5", "PyQt6", "PySide2", "PySide6"):
+#         if QtModuleName in sys.modules:
+#             QtModule = sys.modules[QtModuleName]
+#             break
+#
+# # Try importing qt libs
+# if not QtModule:
+#     for QtModuleName in ("PyQt5", "PyQt6", "PySide2", "PySide6"):
+#         try:
+#             QtModule = importlib.import_module(QtModuleName)
+#         except ImportError:
+#             continue
+#         else:
+#             break
+#
+#
+# if not QtModule:
+#     raise ImportError("No Qt implementations found")
+#
+# log.info("Using Qt Implementation: {}".format(QtModuleName))
+#
+# QtCore = importlib.import_module(QtModuleName + ".QtCore", package=QtModuleName)
+# QtGui = importlib.import_module(QtModuleName + ".QtGui", package=QtModuleName)
+#
+# if QtModuleName == "PyQt5":
+#     from PyQt5.QtCore import QCoreApplication
+#     from PyQt5.QtCore import pyqtSlot as Slot
+#
+#     QApplication = QCoreApplication
+#
+# elif QtModuleName == "PyQt6":
+#     from PyQt6.QtCore import QCoreApplication
+#     from PyQt6.QtCore import pyqtSlot as Slot
+#
+#     QApplication = QCoreApplication
+#
+# elif QtModuleName == "PySide2":
+#     from PySide2.QtCore import Slot, QCoreApplication
+#
+#     QApplication = QCoreApplication
+#
+# elif QtModuleName == "PySide6":
+#     from PySide6.QtCore import Slot, QCoreApplication
+#
+#     QApplication = QCoreApplication
+#
+# else:
+#     raise ImportError("Failed to import QCoreApplication")
+#
+#
+# # Subclass of whatever QApplication is with some type hints
+# class QApp(QApplication):
+#     aboutToQuit: SIGNAL_TYPE
 
-# If QT_API env variable is given, use that or fail trying
-qtapi_env = os.getenv("QT_API", "").strip().lower()
-if qtapi_env:
-    env_to_mod_map = {
-        "pyqt5": "PyQt5",
-        "pyqt6": "PyQt6",
-        "pyside6": "PySide6",
-        "pyside2": "PySide2",
-    }
-    if qtapi_env in env_to_mod_map:
-        QtModuleName = env_to_mod_map[qtapi_env]
-    else:
-        raise ImportError(
-            "QT_API environment variable set ({}) but not one of [{}].".format(
-                qtapi_env, ", ".join(env_to_mod_map.keys())
-            )
-        )
 
-    log.info("Forcing use of {} as Qt Implementation".format(QtModuleName))
-    QtModule = importlib.import_module(QtModuleName)
-
-# If a Qt lib is already imported, use that
-if not QtModule:
-    for QtModuleName in ("PyQt5", "PyQt6", "PySide2", "PySide6"):
-        if QtModuleName in sys.modules:
-            QtModule = sys.modules[QtModuleName]
-            break
-
-# Try importing qt libs
-if not QtModule:
-    for QtModuleName in ("PyQt5", "PyQt6", "PySide2", "PySide6"):
-        try:
-            QtModule = importlib.import_module(QtModuleName)
-        except ImportError:
-            continue
-        else:
-            break
+QApp = QCoreApplication
 
 
-if not QtModule:
-    raise ImportError("No Qt implementations found")
-
-log.info("Using Qt Implementation: {}".format(QtModuleName))
-
-QtCore = importlib.import_module(QtModuleName + ".QtCore", package=QtModuleName)
-QtGui = importlib.import_module(QtModuleName + ".QtGui", package=QtModuleName)
-
-if QtModuleName == "PyQt5":
-    from PyQt5.QtCore import QCoreApplication
-    from PyQt5.QtCore import pyqtSlot as Slot
-
-    QApplication = QCoreApplication
-
-elif QtModuleName == "PyQt6":
-    from PyQt6.QtCore import QCoreApplication
-    from PyQt6.QtCore import pyqtSlot as Slot
-
-    QApplication = QCoreApplication
-
-elif QtModuleName == "PySide2":
-    from PySide2.QtCore import Slot, QCoreApplication
-
-    QApplication = QCoreApplication
-
-elif QtModuleName == "PySide6":
-    from PySide6.QtCore import Slot, QCoreApplication
-
-    QApplication = QCoreApplication
-
-else:
-    raise ImportError("Failed to import QCoreApplication")
-
-
-# Subclass of whatever QApplication is with some type hints
-class QApp(QApplication):
-    aboutToQuit: SIGNAL_TYPE
-
-
-def _make_signaller(qtimpl_qtcore, *args):
-    class Signaller(qtimpl_qtcore.QObject):
-        try:
-            signal: SIGNAL_TYPE = qtimpl_qtcore.Signal(*args)
-        except AttributeError:
-            signal: SIGNAL_TYPE = qtimpl_qtcore.pyqtSignal(*args)
+def _make_signaller(*args):
+    class Signaller(QObject):
+        signal: SIGNAL_TYPE = Signal(*args)
 
     return Signaller()
 
 
 @with_logger
-class _SimpleTimer(QtCore.QObject):
+class _SimpleTimer(QObject):
     def __init__(self):
         super().__init__()
         self.__callbacks = {}
@@ -205,7 +206,7 @@ class _QEventLoop(asyncio.AbstractEventLoop, ABC):
         self._write_notifiers = {}
         self._timer = _SimpleTimer()
 
-        self.__call_soon_signaller = signaller = _make_signaller(QtCore, object, tuple)
+        self.__call_soon_signaller = signaller = _make_signaller(object, tuple)
         self.__call_soon_signal: SIGNAL_TYPE = signaller.signal
         signaller.signal.connect(lambda callback, args: self.call_soon(callback, *args))
 
@@ -368,7 +369,7 @@ class _QEventLoop(asyncio.AbstractEventLoop, ABC):
             existing.activated["int"].disconnect()
             # will get overwritten by the assignment below anyways
 
-        notifier = QtCore.QSocketNotifier(_fileno(fd), QtCore.QSocketNotifier.Type.Read)
+        notifier = QSocketNotifier(_fileno(fd), QSocketNotifier.Type.Read)
         notifier.setEnabled(True)
         self.__log_debug("Adding reader callback for file descriptor %s", fd)
         notifier.activated["int"].connect(
@@ -405,9 +406,9 @@ class _QEventLoop(asyncio.AbstractEventLoop, ABC):
             existing.activated["int"].disconnect()
             # will get overwritten by the assignment below anyways
 
-        notifier = QtCore.QSocketNotifier(
+        notifier = QSocketNotifier(
             _fileno(fd),
-            QtCore.QSocketNotifier.Type.Write,
+            QSocketNotifier.Type.Write,
         )
         notifier.setEnabled(True)
         self.__log_debug("Adding writer callback for file descriptor %s", fd)
