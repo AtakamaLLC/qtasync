@@ -2,13 +2,14 @@ import logging
 import importlib
 import sys
 import os
-from typing import TYPE_CHECKING, Type
+from typing import TYPE_CHECKING, Type, Any
 
 from .types.unbound import SIGNAL_TYPE
 
 if TYPE_CHECKING:
     # For static type checking, feel free to set the Qt library of your choice here
     from PySide2 import QtCore as _TypedQtCore
+
 
 _log = logging.getLogger(__name__)
 
@@ -59,21 +60,32 @@ if not _QtModule:
 
 _log.info("Using Qt Implementation: {}".format(_QtModuleName))
 
-_QtCore = importlib.import_module(_QtModuleName + ".QtCore", package=_QtModuleName)
+
+# def import_module(qt_module_name: str):
+#     return importlib.import_module(qt_module_name + ".QtCore", package=qt_module_name)
+
+
+# _QtCore: "_qt.QtCore" = importlib.import_module(_QtModuleName + ".QtCore", package=_QtModuleName)
+# _QtCore: "_TypedQtCore" = import_module(_QtModuleName)
 # _QtGui = importlib.import_module(QtModuleName + ".QtGui", package=QtModuleName)
 
-#
-# if QtModuleName == "PyQt5":
-#     from PyQt5 import QtCore
-# elif QtModuleName == "PyQt6":
-#     from PyQt6 import QtCore
-# elif QtModuleName == "PySide2":
-#     from PySide2 import QtCore
-# elif QtModuleName == "PySide6":
-#     from PySide6 import QtCore
-# else:
-#     raise ImportError("Failed to import QCoreApplication")
+if _QtModuleName == "PyQt5":
+    from PyQt5 import QtCore as _QtCore
+elif _QtModuleName == "PyQt6":
+    from PyQt6 import QtCore as _QtCore
+elif _QtModuleName == "PySide2":
+    from PySide2 import QtCore as _QtCore
+elif _QtModuleName == "PySide6":
+    from PySide6 import QtCore as _QtCore
+else:
+    raise ImportError("Failed to import QCoreApplication")
 
+
+# Clear type annotations or else the assignments below will have lots of type errors
+_QtCore: Any = _QtCore
+
+# Expose Qt components and modules for importation
+QtCore: "_TypedQtCore" = _QtCore
 _QCoreApplication: Type["_TypedQtCore.QCoreApplication"] = _QtCore.QCoreApplication
 Slot: "_TypedQtCore.Slot" = _QtCore.Slot
 try:

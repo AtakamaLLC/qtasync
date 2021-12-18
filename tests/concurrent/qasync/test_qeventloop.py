@@ -21,7 +21,7 @@ import pytest
 
 @pytest.fixture
 def loop(request, application):
-    lp = qasync.QEventLoop(application)
+    lp = qasync.QEventLoop()
     asyncio.set_event_loop(lp)
 
     additional_exceptions = []
@@ -224,7 +224,7 @@ def test_loop_not_running(loop):
 
 def test_can_function_as_context_manager(application):
     """Verify that a QEventLoop can function as its own context manager."""
-    with qasync.QEventLoop(application) as loop:
+    with qasync.QEventLoop() as loop:
         assert isinstance(loop, qasync.QEventLoop)
         loop.call_soon(loop.stop)
         loop.run_forever()

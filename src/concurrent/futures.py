@@ -57,7 +57,9 @@ class _QRunnable(QRunnable):
             return
 
         try:
+            log.debug("Running %s", self)
             result = self.fn(*self.args, **self.kwargs)
+            log.debug("Result was %s", result)
         except BaseException as ex:
             self.future.set_exception(ex)
             # Copied from concurrent.futures.thread._WorkItem.run()
@@ -229,12 +231,13 @@ class QThreadPoolExecutor(Executor):
         self._shutdown_mutex = PythonicQMutex()
         self._is_shutdown = False
 
-    def submit(self, fn, /, *args, **kwargs) -> PythonicQFuture:
+    def submit(self, fn, *args, **kwargs) -> PythonicQFuture:
         with self._shutdown_mutex:
             if self._is_shutdown:
                 raise RuntimeError
             future = PythonicQFuture(parent=self._pool)
             runnable = _QRunnable(future, fn, args, kwargs)
+            log.debug("Submitting to QThreadPoolExecutor: %s(%s, %s)", fn, args, kwargs)
             self._pool.start(runnable)
             return future
 

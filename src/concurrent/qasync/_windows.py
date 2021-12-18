@@ -1,10 +1,4 @@
-# © 2018 Gerard Marull-Paretas <gerard@teslabs.com>
-# © 2014 Mark Harviston <mark.harviston@gmail.com>
-# © 2014 Arve Knudsen <arve.knudsen@gmail.com>
-# BSD License
-
-"""Windows specific Quamash functionality."""
-
+import logging
 import asyncio
 import sys
 
@@ -19,7 +13,9 @@ import math
 
 from src.concurrent.qasync import _make_signaller
 from ...env import QMutex, QMutexLocker, QThread, QSemaphore
-from ._common import with_logger
+
+log = logging.getLogger(__name__)
+
 
 UINT32_MAX = 0xFFFFFFFF
 
@@ -31,7 +27,7 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
     def __init__(self):
         super().__init__(_IocpProactor())
 
-        self.__event_signaller = _make_signaller(list)
+        self.__event_signaller = _make_signaller("QVariantList")
         self.__event_signal = self.__event_signaller.signal
         self.__event_signal.connect(self._process_events)
         self.__event_poller = _EventPoller(self.__event_signal)
@@ -40,10 +36,10 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
         """Process events from proactor."""
         for f, callback, transferred, key, ov in events:
             try:
-                self._logger.debug("Invoking event callback %s", callback)
+                log.debug("Invoking event callback %s", callback)
                 value = callback(transferred, key, ov)
             except OSError as e:
-                self._logger.debug("Event callback failed", exc_info=sys.exc_info())
+                log.debug("Event callback failed", exc_info=sys.exc_info())
                 if not f.done():
                     f.set_exception(e)
             else:
@@ -57,7 +53,6 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
         self.__event_poller.stop()
 
 
-@with_logger
 class _IocpProactor(windows_events.IocpProactor):
     def __init__(self):
         self.__events = []
@@ -73,7 +68,7 @@ class _IocpProactor(windows_events.IocpProactor):
         return tmp
 
     def close(self):
-        self._logger.debug("Closing")
+        log.debug("Closing")
         super(_IocpProactor, self).close()
 
     def recv(self, conn, nbytes, flags=0):
@@ -99,7 +94,7 @@ class _IocpProactor(windows_events.IocpProactor):
 
         with QMutexLocker(self._lock):
             while True:
-                # self._logger.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
+                # log.debug('Polling IOCP with timeout {} ms in thread {}...'.format(
                 #     ms, threading.get_ident()))
                 status = _overlapped.GetQueuedCompletionStatus(self._iocp, ms)
                 if status is None:
@@ -139,7 +134,6 @@ class _IocpProactor(windows_events.IocpProactor):
             return super(_IocpProactor, self).connect(conn, address)
 
 
-@with_logger
 class _EventWorker(QThread):
     def __init__(self, proactor, parent):
         super().__init__()
@@ -159,19 +153,18 @@ class _EventWorker(QThread):
         self.wait()
 
     def run(self):
-        self._logger.debug("Thread started")
+        log.debug("Thread started")
         self.__semaphore.release()
 
         while not self.__stop:
             events = self.__proactor.select(0.01)
             if events:
-                self._logger.debug("Got events from poll: %s", events)
+                log.debug("Got events from poll: %s", events)
                 self.__sig_events.emit(events)
 
-        self._logger.debug("Exiting thread")
+        log.debug("Exiting thread")
 
 
-@with_logger
 class _EventPoller:
 
     """Polling of events in separate thread."""
@@ -180,10 +173,10 @@ class _EventPoller:
         self.sig_events = sig_events
 
     def start(self, proactor):
-        self._logger.debug("Starting (proactor: %s)...", proactor)
+        log.debug("Starting (proactor: %s)...", proactor)
         self.__worker = _EventWorker(proactor, self)
         self.__worker.start()
 
     def stop(self):
-        self._logger.debug("Stopping worker thread...")
+        log.debug("Stopping worker thread...")
         self.__worker.stop()
