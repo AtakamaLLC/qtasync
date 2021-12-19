@@ -23,4 +23,4 @@ else:
 def application():
     from src.env import QCoreApplication
 
-    return QCoreApplication()
+    return QCoreApplication([])

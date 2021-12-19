@@ -11,7 +11,8 @@ except ImportError:  # noqa
 
 import math
 
-from src.concurrent.qasync import _make_signaller
+from src.concurrent.qasync.util import _make_signaller
+from src.concurrent.qasync.loop import _QEventLoop
 from ...env import QMutex, QMutexLocker, QThread, QSemaphore
 
 log = logging.getLogger(__name__)
@@ -20,12 +21,13 @@ log = logging.getLogger(__name__)
 UINT32_MAX = 0xFFFFFFFF
 
 
-class _ProactorEventLoop(asyncio.ProactorEventLoop):
+class QProactorEventLoop(_QEventLoop, asyncio.ProactorEventLoop):
 
     """Proactor based event loop."""
 
     def __init__(self):
-        super().__init__(_IocpProactor())
+        self._proactor = _IocpProactor()
+        super().__init__(self._proactor)
 
         self.__event_signaller = _make_signaller("QVariantList")
         self.__event_signal = self.__event_signaller.signal
@@ -45,6 +47,12 @@ class _ProactorEventLoop(asyncio.ProactorEventLoop):
             else:
                 if not f.cancelled():
                     f.set_result(value)
+
+    def _check_closed(self):
+        # TODO: Needed? Should be self._proactor._check_closed()?
+        if not self._proactor:
+            raise RuntimeError
+        return self._proactor._check_closed()
 
     def _before_run_forever(self):
         self.__event_poller.start(self._proactor)
@@ -143,8 +151,8 @@ class _EventWorker(QThread):
         self.__sig_events = parent.sig_events
         self.__semaphore = QSemaphore()
 
-    def start(self):
-        super().start()
+    def start(self, **kwargs):
+        super().start(**kwargs)
         self.__semaphore.acquire()
 
     def stop(self):

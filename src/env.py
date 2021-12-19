@@ -87,7 +87,10 @@ _QtCore: Any = _QtCore
 # Expose Qt components and modules for importation
 QtCore: "_TypedQtCore" = _QtCore
 _QCoreApplication: Type["_TypedQtCore.QCoreApplication"] = _QtCore.QCoreApplication
-Slot: "_TypedQtCore.Slot" = _QtCore.Slot
+try:
+    Slot: "_TypedQtCore.Slot" = _QtCore.Slot
+except AttributeError:
+    Slot: "_TypedQtCore.Slot" = _QtCore.pyqtSlot
 try:
     Signal: "_TypedQtCore.Signal" = _QtCore.Signal
 except AttributeError:

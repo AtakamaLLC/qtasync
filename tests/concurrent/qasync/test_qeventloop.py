@@ -13,7 +13,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
 import subprocess
 
-from src.concurrent import qasync
+from src.concurrent.qasync.env import QEventLoop
 from src.concurrent.futures import QThreadPoolExecutor
 
 import pytest
@@ -21,7 +21,7 @@ import pytest
 
 @pytest.fixture
 def loop(request, application):
-    lp = qasync.QEventLoop()
+    lp = QEventLoop()
     asyncio.set_event_loop(lp)
 
     additional_exceptions = []
@@ -224,8 +224,8 @@ def test_loop_not_running(loop):
 
 def test_can_function_as_context_manager(application):
     """Verify that a QEventLoop can function as its own context manager."""
-    with qasync.QEventLoop() as loop:
-        assert isinstance(loop, qasync.QEventLoop)
+    with QEventLoop() as loop:
+        assert isinstance(loop, QEventLoop)
         loop.call_soon(loop.stop)
         loop.run_forever()
 

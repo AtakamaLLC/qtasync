@@ -8,8 +8,13 @@
 import asyncio
 import selectors
 import collections
+import logging
 
-from src.concurrent.qasync import QtCore, with_logger, _fileno
+from src.concurrent.qasync.util import _fileno
+from src.concurrent.qasync.loop import _QEventLoop
+from ...env import QSocketNotifier
+
+log = logging.getLogger(__name__)
 
 
 EVENT_READ = 1 << 0
@@ -37,7 +42,6 @@ class _SelectorMapping(collections.abc.Mapping):
         return iter(self._selector._fd_to_key)
 
 
-@with_logger
 class _Selector(selectors.BaseSelector):
     def __init__(self, parent):
         # this maps file descriptors to keys
@@ -85,24 +89,24 @@ class _Selector(selectors.BaseSelector):
         self._fd_to_key[key.fd] = key
 
         if events & EVENT_READ:
-            notifier = QtCore.QSocketNotifier(key.fd, QtCore.QSocketNotifier.Read)
+            notifier = QSocketNotifier(key.fd, QSocketNotifier.Read)
             notifier.activated["int"].connect(self.__on_read_activated)
             self.__read_notifiers[key.fd] = notifier
         if events & EVENT_WRITE:
-            notifier = QtCore.QSocketNotifier(key.fd, QtCore.QSocketNotifier.Write)
+            notifier = QSocketNotifier(key.fd, QSocketNotifier.Write)
             notifier.activated["int"].connect(self.__on_write_activated)
             self.__write_notifiers[key.fd] = notifier
 
         return key
 
     def __on_read_activated(self, fd):
-        self._logger.debug("File %s ready to read", fd)
+        log.debug("File %s ready to read", fd)
         key = self._key_from_fd(fd)
         if key:
             self.__parent._process_event(key, EVENT_READ & key.events)
 
     def __on_write_activated(self, fd):
-        self._logger.debug("File %s ready to write", fd)
+        log.debug("File %s ready to write", fd)
         key = self._key_from_fd(fd)
         if key:
             self.__parent._process_event(key, EVENT_WRITE & key.events)
@@ -141,7 +145,7 @@ class _Selector(selectors.BaseSelector):
         return key
 
     def close(self):
-        self._logger.debug("Closing")
+        log.debug("Closing")
         self._fd_to_key.clear()
         self.__read_notifiers.clear()
         self.__write_notifiers.clear()
@@ -166,7 +170,7 @@ class _Selector(selectors.BaseSelector):
             return None
 
 
-class _SelectorEventLoop(asyncio.SelectorEventLoop):
+class QSelectorEventLoop(_QEventLoop, asyncio.SelectorEventLoop):
     def __init__(self):
         self._signal_safe_callbacks = []
 
@@ -179,19 +183,22 @@ class _SelectorEventLoop(asyncio.SelectorEventLoop):
     def _after_run_forever(self):
         pass
 
+    def _check_closed(self):
+        pass
+
     def _process_event(self, key, mask):
         """Selector has delivered us an event."""
-        self._logger.debug("Processing event with key %s and mask %s", key, mask)
+        log.debug("Processing event with key %s and mask %s", key, mask)
         fileobj, (reader, writer) = key.fileobj, key.data
         if mask & selectors.EVENT_READ and reader is not None:
             if reader._cancelled:
                 self.remove_reader(fileobj)
             else:
-                self._logger.debug("Invoking reader callback: %s", reader)
+                log.debug("Invoking reader callback: %s", reader)
                 reader._run()
         if mask & selectors.EVENT_WRITE and writer is not None:
             if writer._cancelled:
                 self.remove_writer(fileobj)
             else:
-                self._logger.debug("Invoking writer callback: %s", writer)
+                log.debug("Invoking writer callback: %s", writer)
                 writer._run()
