@@ -11,3 +11,16 @@ utilizing the `QCoreApplication` event loop as a `asyncio.BaseEventLoop`.
 ## Installation
 
 `PySideExtensions` is not yet on PyPi, so it must be installed from GitHub.
+
+
+## Use
+
+If you have multiple Python implementations of Qt installed, aet the `QT_API` environment variable according to the
+following table:
+
+| QT_API value | Qt Implementation |
+| ------------ | ----------------- |
+| pyside2 | PySide2 |
+| pyside6 | PySide6 |
+| pyqt5 | PyQt5 |
+| pyqt6 | PyQt6 |

@@ -1,24 +1,20 @@
 import logging
 import time
-from unittest import TestCase
 
-from PySide2.QtCore import QCoreApplication, QThreadPool, QThread
+from src.env import QThreadPool, QThread
 
 from src.concurrent.futures import PythonicQFuture, QThreadPoolExecutor, PythonicQMutex
 
 from ..fixtures import process_events
+from tests.framework import SmartGuiTest
 
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
+)
 log = logging.getLogger(__name__)
 
 
-class TestPythonicQFuture(TestCase):
-    def setUp(self) -> None:
-        logging.basicConfig()
-        self.qapp = QCoreApplication.instance() or QCoreApplication()
-
-    def tearDown(self) -> None:
-        process_events(self.qapp)
-
+class TestPythonicQFuture(SmartGuiTest):
     def test_basic_future(self):
         future_executed = False
 
@@ -62,7 +58,7 @@ class TestPythonicQFuture(TestCase):
         initial_time = time.monotonic()
         while not blocking_future.running():
             # And process events while we're sleeping
-            process_events(self.qapp)
+            process_events(self.presenter)
 
             # Should take less than one second
             if (time.monotonic() - initial_time) > 1:
@@ -88,7 +84,7 @@ class TestPythonicQFuture(TestCase):
 
         future = executor.submit(fn)
 
-        self.assertEqual(2, future.result(timeout=3))
+        self.assertEqual(2, future.result(timeout=None))
 
     def test_exception(self):
         executor = QThreadPoolExecutor()
@@ -123,7 +119,7 @@ class TestPythonicQFuture(TestCase):
         mutex.unlock()
         # Events must be processed so that the finished signal is emitted and processed
         self.assertEqual(3, future.result(timeout=1))
-        process_events(self.qapp)
+        process_events(self.presenter)
         self.assertTrue(did_callback)
 
         # Case 2: Callback added after future finished

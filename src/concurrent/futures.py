@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Callable, Any, Optional, Union
 from concurrent.futures import Executor, Future, CancelledError, InvalidStateError
 from concurrent.futures import TimeoutError as FutureTimeoutError
 
-from PySide2.QtCore import (
+from src.env import (
     QObject,
     Signal,
     QThreadPool,
@@ -19,7 +19,7 @@ from ..types.bound import PYTHON_TIME
 from ..types.unbound import SIGNAL_TYPE
 
 if TYPE_CHECKING:
-    from PySide2.QtCore import SignalInstance  # noqa: F401
+    from src.env import SignalInstance  # noqa: F401
 
 log = logging.getLogger(__name__)
 

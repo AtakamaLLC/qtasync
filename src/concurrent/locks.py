@@ -1,15 +1,30 @@
+import logging
 from typing import Optional
 
-from PySide2.QtCore import QMutex, QObject, QWaitCondition
+from src.env import (
+    QMutex,
+    QRecursiveMutex,
+    QObject,
+    QWaitCondition,
+    QtModuleName,
+    PYQT5_MODULE_NAME,
+    PYQT6_MODULE_NAME,
+    PYSIDE6_MODULE_NAME,
+)
 
 from ..types.unbound import SIGNAL_TYPE
 from ..types.bound import QT_TIME, PYTHON_TIME
 from ..util import qt_timeout, mk_q_deadline_timer
 
+log = logging.getLogger(__name__)
+
 
 class PythonicQMutex:
     def __init__(self, default_timeout: PYTHON_TIME = 0, recursive: bool = False):
-        self._mutex = QMutex(QMutex.Recursive if recursive else QMutex.NonRecursive)
+        if QtModuleName in (PYQT6_MODULE_NAME, PYSIDE6_MODULE_NAME):
+            self._mutex = QRecursiveMutex() if recursive else QMutex()
+        else:
+            self._mutex = QMutex(QMutex.Recursive if recursive else QMutex.NonRecursive)
         self._default_timeout = qt_timeout(default_timeout)
 
     def __enter__(self):
@@ -41,10 +56,10 @@ class PythonicQWaitCondition:
         self._cond = QWaitCondition()
 
     def __enter__(self):
-        self._mutex.lock()
+        self.acquire()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._mutex.unlock()
+        self.release()
 
     def acquire(self):
         self._mutex.lock()
@@ -53,7 +68,10 @@ class PythonicQWaitCondition:
         self._mutex.unlock()
 
     def wait(self, timeout: PYTHON_TIME = None) -> bool:
-        return self._cond.wait(self._mutex._mutex, mk_q_deadline_timer(timeout))
+        if timeout is None:
+            return self._cond.wait(self._mutex._mutex)
+        else:
+            return self._cond.wait(self._mutex._mutex, mk_q_deadline_timer(timeout))
 
     def notify_all(self):
         self._cond.wakeAll()
