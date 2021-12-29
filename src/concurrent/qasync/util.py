@@ -3,8 +3,10 @@ import logging
 import functools
 import asyncio
 
-from src.env import QObject, Signal, QCoreApplication, Slot
+from src.env import QObject, Signal, QCoreApplication, Slot, QTimerEvent
 from src.types.unbound import SIGNAL_TYPE
+from src.types.bound import PYTHON_TIME
+from src.util import qt_timeout
 
 log = logging.getLogger(__name__)
 
@@ -17,20 +19,20 @@ def _make_signaller(*args):
 
 
 class _SimpleTimer(QObject):
-    def __init__(self):
-        super().__init__()
-        self.__callbacks = {}
+    def __init__(self, parent: "QObject"):
+        super().__init__(parent=parent)
+        self.__callbacks: dict[int, "asyncio.Handle"] = {}
         self._stopped = False
         self.__debug_enabled = False
 
-    def add_callback(self, handle, delay=0):
-        timerid = self.startTimer(int(delay * 1000))
+    def add_callback(self, handle, delay: PYTHON_TIME = 0):
+        timerid = self.startTimer(qt_timeout(delay))
         self.__log_debug("Registering timer id %s", timerid)
         assert timerid not in self.__callbacks
         self.__callbacks[timerid] = handle
         return handle
 
-    def timerEvent(self, event):  # noqa: N802
+    def timerEvent(self, event: "QTimerEvent"):  # noqa: N802
         timerid = event.timerId()
         self.__log_debug("Timer event on id %s", timerid)
         if self._stopped:
@@ -44,14 +46,14 @@ class _SimpleTimer(QObject):
                 self.__log_debug(e)
                 pass
             else:
-                if handle._cancelled:
+                if handle.cancelled():
                     self.__log_debug("Handle %s cancelled", handle)
                 else:
                     self.__log_debug("Calling handle %s", handle)
                     handle._run()
             finally:
                 del self.__callbacks[timerid]
-                handle = None
+                # handle = None
             self.killTimer(timerid)
 
     def stop(self):

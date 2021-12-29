@@ -114,6 +114,7 @@ QThreadPool: Type["_TypedQtCore.QThreadPool"] = _QtCore.QThreadPool
 QRunnable: Type["_TypedQtCore.QRunnable"] = _QtCore.QRunnable
 QEvent: Type["_TypedQtCore.QEvent"] = _QtCore.QEvent
 QDeadlineTimer: Type["_TypedQtCore.QDeadlineTimer"] = _QtCore.QDeadlineTimer
+QTimerEvent: Type["_TypedQtCore.QTimerEvent"] = _QtCore.QTimerEvent
 
 
 # QtWidgets
@@ -133,3 +134,13 @@ class QCoreApplication(_QCoreApplication):
             return super().sendPostedEvents(receiver=receiver, eventType=event_type)
         else:
             return super().sendPostedEvents(receiver=receiver, event_type=event_type)
+
+    # Enable this function to view all events processed in the qapp
+    # def notify(self, obj: "QObject", event: "QEvent"):
+    #     ret = super().notify(obj, event)
+    #     try:
+    #         _log.debug("Notify %s %s (%s) returned %s", obj, event, event.type(), ret)
+    #         tb = traceback.extract_stack()
+    #         _log.debug("".join(tb.format()))
+    #     finally:
+    #         return ret
