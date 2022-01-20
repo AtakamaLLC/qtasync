@@ -2,7 +2,7 @@ import logging
 import importlib
 import sys
 import os
-from typing import TYPE_CHECKING, Type, Any, Optional
+from typing import TYPE_CHECKING, Type, Optional
 
 from .types.unbound import SIGNAL_TYPE
 
