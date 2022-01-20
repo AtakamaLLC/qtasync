@@ -71,7 +71,11 @@ class PythonicQWaitCondition:
         if timeout is None:
             return self._cond.wait(self._mutex._mutex)
         else:
-            return self._cond.wait(self._mutex._mutex, mk_q_deadline_timer(timeout))
+            if QtModuleName == PYQT5_MODULE_NAME:
+                # For some reason, the QDeadlineTimer does not work with PyQt5 and wait() instantly returns
+                return self._cond.wait(self._mutex._mutex, msecs=qt_timeout(timeout))
+            else:
+                return self._cond.wait(self._mutex._mutex, mk_q_deadline_timer(timeout))
 
     def notify_all(self):
         self._cond.wakeAll()

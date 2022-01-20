@@ -19,18 +19,6 @@ log = logging.getLogger(__name__)
 
 
 class SmartGuiTest(TestCase):
-    """
-    All tests that use this test class will have access to the following (unless overridden, of course)
-        - A VManager (self.db)
-        - A MainPresenter (self.presenter)
-        - Factory functions to create temp qobjects or temp presenters which are automatically deleted after each
-            test is completed (self.create_temp_qobject() and self.create_temp_presenter())
-        - A PerformanceAnalysis object which can help tweak test timeouts for slow machines (self.performance)
-    """
-
-    process_events_on_window_close: bool = False
-    process_events_on_thread_wait: bool = True
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._test_qobjs: List["TempQObject"] = []

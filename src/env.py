@@ -8,8 +8,8 @@ from .types.unbound import SIGNAL_TYPE
 
 if TYPE_CHECKING:
     # For static type checking, feel free to set the Qt library of your choice here
-    from PySide2 import QtCore as _TypedQtCore
-    from PySide2 import QtWidgets as _TypedQtWidgets
+    from PyQt5 import QtCore as _TypedQtCore
+    from PyQt5 import QtWidgets as _TypedQtWidgets
 
 
 _log = logging.getLogger(__name__)
@@ -115,6 +115,7 @@ QRunnable: Type["_TypedQtCore.QRunnable"] = _QtCore.QRunnable
 QEvent: Type["_TypedQtCore.QEvent"] = _QtCore.QEvent
 QDeadlineTimer: Type["_TypedQtCore.QDeadlineTimer"] = _QtCore.QDeadlineTimer
 QTimerEvent: Type["_TypedQtCore.QTimerEvent"] = _QtCore.QTimerEvent
+QTime: Type["_TypedQtCore.QTime"] = _QtCore.QTime
 
 
 # QtWidgets
