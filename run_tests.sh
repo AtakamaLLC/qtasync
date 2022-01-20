@@ -13,11 +13,13 @@ echo "Running tests using PyQt6"
 QT_API=pyqt6 pytest ./tests
 pyqt6_exit_code=$?
 
+TESTS_FAILED=0
 if [ $pyside2_exit_code -eq 0 ]
 then
     echo "PySide2 tests ran successfully"
 else
     echo "PySide2 tests failed!"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 if [ $pyside6_exit_code -eq 0 ]
@@ -25,6 +27,7 @@ then
     echo "PySide6 tests ran successfully"
 else
     echo "PySide6 tests failed!"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 if [ $pyqt5_exit_code -eq 0 ]
@@ -32,6 +35,7 @@ then
     echo "PyQt5 tests ran successfully"
 else
     echo "PyQt5 tests failed!"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
 if [ $pyqt6_exit_code -eq 0 ]
@@ -39,5 +43,7 @@ then
     echo "PyQt6 tests ran successfully"
 else
     echo "PyQt6 tests failed!"
+    TESTS_FAILED=$((TESTS_FAILED + 1))
 fi
 
+exit $TESTS_FAILED
