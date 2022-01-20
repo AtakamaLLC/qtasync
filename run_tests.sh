@@ -1,49 +1,46 @@
 #!/usr/bin/env bash
 
-echo "Running tests using PySide2"
-QT_API=pyside2 pytest ./tests
-pyside2_exit_code=$?
-echo "Running tests using PySide6"
-QT_API=pyside6 pytest ./tests
-pyside6_exit_code=$?
-echo "Running tests using PyQt5"
-QT_API=pyqt5 pytest ./tests
-pyqt5_exit_code=$?
-echo "Running tests using PyQt6"
-QT_API=pyqt6 pytest ./tests
-pyqt6_exit_code=$?
 
-TESTS_FAILED=0
-if [ $pyside2_exit_code -eq 0 ]
+qt_libs=("PySide2" "PySide6" "PyQt5" "PyQt6")
+exit_codes=(0 0 0 0)
+missing_libs=(0 0 0 0)
+failures=0
+present_libs_count=0
+missing_libs_count=0
+
+for (( idx=0; idx<${#qt_libs[@]}; idx++ ))
+do
+    i=${qt_libs[$idx]}
+    if pip show -q $i
+    then
+        echo "Running tests using $i"
+        present_libs_count=$((present_libs_count + 1))
+        QT_API=pyside2 pytest ./tests
+        code=$?
+        exit_codes[$idx]=$code
+        if [ $code -ne 0 ]
+        then
+            failures=$((failures + 1))
+        fi
+    else
+        echo "Skipping $i tests since it is not installed"
+        missing_libs[$idx]=1
+        missing_libs_count=$((missing_libs_count + 1))
+    fi
+done
+
+echo "Ran all tests with ${present_libs_count} Qt implementations"
+echo "The test suite failed for ${failures} of them"
+echo "And ${missing_libs_count} Qt implementations were missing"
+
+if [ $failures -gt 0 ]
 then
-    echo "PySide2 tests ran successfully"
-else
-    echo "PySide2 tests failed!"
-    TESTS_FAILED=$((TESTS_FAILED + 1))
+    exit $failures
 fi
 
-if [ $pyside6_exit_code -eq 0 ]
+if [ $missing_libs_count -eq ${#qt_libs[@]} ]
 then
-    echo "PySide6 tests ran successfully"
-else
-    echo "PySide6 tests failed!"
-    TESTS_FAILED=$((TESTS_FAILED + 1))
+    echo "No Qt librariers were installed!"
+    exit 1
 fi
 
-if [ $pyqt5_exit_code -eq 0 ]
-then
-    echo "PyQt5 tests ran successfully"
-else
-    echo "PyQt5 tests failed!"
-    TESTS_FAILED=$((TESTS_FAILED + 1))
-fi
-
-if [ $pyqt6_exit_code -eq 0 ]
-then
-    echo "PyQt6 tests ran successfully"
-else
-    echo "PyQt6 tests failed!"
-    TESTS_FAILED=$((TESTS_FAILED + 1))
-fi
-
-exit $TESTS_FAILED

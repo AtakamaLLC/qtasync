@@ -175,7 +175,7 @@ class QSelectorEventLoop(_QEventLoop, asyncio.SelectorEventLoop):
         self._signal_safe_callbacks = []
 
         selector = _Selector(self)
-        super().__init__(self, selector=selector)
+        super().__init__(selector=selector)
 
     def _before_run_forever(self):
         pass
@@ -184,7 +184,7 @@ class QSelectorEventLoop(_QEventLoop, asyncio.SelectorEventLoop):
         pass
 
     def _check_closed(self):
-        pass
+        return super(asyncio.SelectorEventLoop, self)._check_closed()
 
     def _process_event(self, key, mask):
         """Selector has delivered us an event."""
