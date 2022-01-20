@@ -163,7 +163,7 @@ class PythonicQFuture(QObject, Future):
 
     def add_done_callback(self, fn: Callable[["PythonicQFuture"], Any]) -> None:
         with self._cond:
-            if not self._state in [
+            if self._state not in [
                 FutureStatus.CANCELLED,
                 FutureStatus.CANCELLED_AND_NOTIFIED,
                 FutureStatus.FINISHED,
