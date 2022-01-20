@@ -12,6 +12,7 @@ from .enums import FailureCodes
 
 if TYPE_CHECKING:
     from src.env import QtCore
+    from tests.framework import SmartGuiTest
 
 
 RESTORE_FN_TYPE = Callable[[], None]
