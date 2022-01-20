@@ -11,9 +11,7 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python 3.9
@@ -26,6 +24,10 @@ jobs:
     - name: Lint with flake8
       run: |
         make lint
+    - name: Prepare runner for tests
+      run: |
+        sudo apt-get update
+        sudo apt-get install libgl1
     - name: Test with pytest
       run: |
         make test
