@@ -20,11 +20,8 @@ jobs:
         python-version: "3.9"
     - name: Set up OpenGL
       run: |
-        sudo add-apt-repository ppa:kisak/kisak-mesa
         sudo apt update
-        sudo apt upgrade
-        sudo apt-get install xvfb mesa-utils
-        xvfb-run glxinfo
+        sudo apt-get install libopengl0 freeglut3 freeglut3-dev
     - name: Install dependencies
       run: |
         make requirements
