@@ -306,6 +306,8 @@ def sock_pair(request):
     have_socketpair = hasattr(socket, "socketpair")
     if have_socketpair:
         client_sock, srv_sock = socket.socketpair()
+        client_sock.setblocking(False)
+        srv_sock.setblocking(False)
         return client_sock, srv_sock
 
     # Create a non-blocking temporary server socket
