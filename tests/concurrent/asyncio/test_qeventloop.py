@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
 import subprocess
 
-from src.concurrent.qasync.env import QEventLoop
+from src.concurrent.asyncio.env import QEventLoop
 from src.concurrent.futures import QThreadPoolExecutor
 
 import pytest
