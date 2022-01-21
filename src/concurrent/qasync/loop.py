@@ -3,10 +3,12 @@ import logging
 import asyncio
 import itertools
 import time
+from typing import Callable
 
-from src.env import QCoreApplication, QSocketNotifier
+from src.env import QCoreApplication, QSocketNotifier, QObject
 from src.concurrent.futures import QThreadPoolExecutor
 from src.types.unbound import SIGNAL_TYPE
+from src.types.bound import PYTHON_TIME
 from src.concurrent.qasync.util import _SimpleTimer, _make_signaller, _fileno
 
 log = logging.getLogger(__name__)
@@ -23,7 +25,8 @@ class _QEventLoop(asyncio.BaseEventLoop):
         self.__exception_handler = None
         self._read_notifiers = {}
         self._write_notifiers = {}
-        self._timer = _SimpleTimer()
+        self._rsc_parent = QObject()
+        self._timer = _SimpleTimer(parent=self._rsc_parent)
 
         self.__call_soon_signaller = signaller = _make_signaller(object, tuple)
         self.__call_soon_signal: SIGNAL_TYPE = signaller.signal
@@ -31,6 +34,7 @@ class _QEventLoop(asyncio.BaseEventLoop):
             lambda callback, _args: self.call_soon(callback, *_args)
         )
         super().__init__(*args, **kwargs)
+        self.set_debug(True)
 
     def _before_run_forever(self):
         raise NotImplementedError
@@ -78,8 +82,8 @@ class _QEventLoop(asyncio.BaseEventLoop):
         self.__log_debug("Running %s until complete", future)
         future = asyncio.ensure_future(future, loop=self)
 
-        def stop(*args):
-            self.stop()  # noqa
+        def stop(*_args):
+            self.stop()
 
         future.add_done_callback(stop)
         try:
@@ -124,9 +128,10 @@ class _QEventLoop(asyncio.BaseEventLoop):
             self.__default_executor.shutdown()
 
         super().close()
-
         self._timer.stop()
-        self.__app = None
+        self._rsc_parent.deleteLater()
+        self._timer = None
+        self._rsc_parent = None
 
         for notifier in itertools.chain(
             self._read_notifiers.values(), self._write_notifiers.values()
@@ -136,7 +141,7 @@ class _QEventLoop(asyncio.BaseEventLoop):
         self._read_notifiers = None
         self._write_notifiers = None
 
-    def call_later(self, delay, callback, *args, context=None):
+    def call_later(self, delay: PYTHON_TIME, callback: Callable, *args, context=None):
         """Register callback to be invoked after a certain delay."""
         if asyncio.iscoroutinefunction(callback):
             raise TypeError("coroutines cannot be used with call_later")
@@ -144,6 +149,7 @@ class _QEventLoop(asyncio.BaseEventLoop):
             raise TypeError(
                 "callback must be callable: {}".format(type(callback).__name__)
             )
+        self._check_closed()
 
         self.__log_debug(
             "Registering callback %s to be invoked with arguments %s after %s second(s)",
@@ -152,26 +158,24 @@ class _QEventLoop(asyncio.BaseEventLoop):
             delay,
         )
 
-        if sys.version_info >= (3, 7):
-            return self._add_callback(
-                asyncio.Handle(callback, args, self, context=context), delay
-            )
-        return self._add_callback(asyncio.Handle(callback, args, self), delay)
+        return self._add_callback(
+            asyncio.Handle(callback, args, self, context=context), delay
+        )
 
-    def _add_callback(self, handle, delay=0):
+    def _add_callback(self, handle: "asyncio.Handle", delay: PYTHON_TIME = 0):
         return self._timer.add_callback(handle, delay)
 
-    def call_soon(self, callback, *args, context=None):
+    def call_soon(self, callback: Callable, *args, context=None):
         """Register a callback to be run on the next iteration of the event loop."""
         return self.call_later(0, callback, *args, context=context)
 
-    def call_at(self, when, callback, *args, context=None):
+    def call_at(self, when: PYTHON_TIME, callback: Callable, *args, context=None):
         """Register callback to be invoked at a certain time."""
         return self.call_later(when - self.time(), callback, *args, context=context)
 
-    def time(self):
+    def time(self) -> PYTHON_TIME:
         """Get time according to event loop's clock."""
-        return time.monotonic()
+        return PYTHON_TIME(time.monotonic())
 
     def _add_reader(self, fd, callback, *args):
         """Register a callback for when a file descriptor is ready for reading."""
@@ -325,6 +329,7 @@ class _QEventLoop(asyncio.BaseEventLoop):
     # Error handlers.
 
     def set_exception_handler(self, handler):
+        log.info("Changing exception handler to %s", handler)
         self.__exception_handler = handler
 
     def default_exception_handler(self, context):
@@ -358,6 +363,7 @@ class _QEventLoop(asyncio.BaseEventLoop):
         self.__log_error("\n".join(log_lines), exc_info=exc_info)
 
     def call_exception_handler(self, context):
+        log.info("call exception handler, %s", context)
         if self.__exception_handler is None:
             try:
                 self.default_exception_handler(context)

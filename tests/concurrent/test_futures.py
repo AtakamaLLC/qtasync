@@ -117,8 +117,8 @@ class TestPythonicQFuture(SmartGuiTest):
         # Case 1: Callback added before future finished
         future.add_done_callback(on_done)
         mutex.unlock()
+        self.assertEqual(3, future.result(timeout=600))
         # Events must be processed so that the finished signal is emitted and processed
-        self.assertEqual(3, future.result(timeout=1))
         process_events(self.presenter)
         self.assertTrue(did_callback)
 

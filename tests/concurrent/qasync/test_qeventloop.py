@@ -1,8 +1,3 @@
-# © 2018 Gerard Marull-Paretas <gerard@teslabs.com>
-# © 2014 Mark Harviston <mark.harviston@gmail.com>
-# © 2014 Arve Knudsen <arve.knudsen@gmail.com>
-# BSD License
-
 import asyncio
 import logging
 import sys
@@ -20,7 +15,7 @@ import pytest
 
 
 @pytest.fixture
-def loop(request, application):
+def loop(request, application) -> "QEventLoop":
     lp = QEventLoop()
     asyncio.set_event_loop(lp)
 
@@ -48,6 +43,7 @@ def loop(request, application):
         additional_exceptions.append(ctx)
 
     def excepthook(type, *args):
+        logging.info("Excepthook called %s", type)
         lp.stop()
         orig_excepthook(type, *args)
 
@@ -56,7 +52,17 @@ def loop(request, application):
     lp.set_exception_handler(except_handler)
 
     request.addfinalizer(fin)
-    return lp
+    yield lp
+    lp.close()
+
+
+def fail_on_timeout(evt_loop: "QEventLoop", timeout=5):
+    def _fail(_loop=evt_loop, _timeout=timeout):
+        _loop.stop()
+        _loop.set_exception_handler(None)
+        pytest.fail(f"Test timed out after {_timeout} seconds")
+
+    evt_loop.call_later(timeout, _fail)
 
 
 @pytest.fixture(
@@ -72,9 +78,11 @@ def executor(request):
     return exc
 
 
-ExceptionTester = type(
-    "ExceptionTester", (Exception,), {}
-)  # to make flake8 not complain
+# ExceptionTester = type(
+#     "ExceptionTester", (Exception,), {}
+# )  # to make flake8 not complain
+class ExceptionTester(Exception):
+    pass
 
 
 class TestCanRunTasksInExecutor:
@@ -298,6 +306,8 @@ def sock_pair(request):
     have_socketpair = hasattr(socket, "socketpair")
     if have_socketpair:
         client_sock, srv_sock = socket.socketpair()
+        client_sock.setblocking(False)
+        srv_sock.setblocking(False)
         return client_sock, srv_sock
 
     # Create a non-blocking temporary server socket
@@ -692,6 +702,7 @@ def test_remove_writer_idempotence(loop, sock_pair):
 
 
 def test_scheduling(loop, sock_pair):
+    fail_on_timeout(loop)
     s1, s2 = sock_pair
     fd = s1.fileno()
     cb_called = asyncio.Future()
@@ -715,7 +726,8 @@ def test_scheduling(loop, sock_pair):
     "sys.version_info < (3,4)",
     reason="Doesn't work on python older than 3.4",
 )
-def test_exception_handler(loop):
+def test_exception_handler(loop: "QEventLoop"):
+    fail_on_timeout(loop, timeout=180)
     handler_called = False
     coro_run = False
     loop.set_debug(False)
@@ -723,12 +735,13 @@ def test_exception_handler(loop):
     async def future_except():
         nonlocal coro_run
         coro_run = True
-        loop.stop()
         raise ExceptionTester()
 
-    def exct_handler(loop, data):
+    def exct_handler(_loop, data):
         nonlocal handler_called
         handler_called = True
+        logging.info("Calling exct_handler %s, %s", _loop, data)
+        _loop.stop()
 
     loop.set_exception_handler(exct_handler)
     asyncio.ensure_future(future_except())

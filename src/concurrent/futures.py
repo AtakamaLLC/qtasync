@@ -4,6 +4,13 @@ from enum import Enum
 from typing import TYPE_CHECKING, Callable, Any, Optional, Union
 from concurrent.futures import Executor, Future, CancelledError, InvalidStateError
 from concurrent.futures import TimeoutError as FutureTimeoutError
+from concurrent.futures._base import (
+    PENDING,
+    RUNNING,
+    CANCELLED,
+    CANCELLED_AND_NOTIFIED,
+    FINISHED,
+)
 
 from src.env import (
     QObject,
@@ -28,11 +35,11 @@ ASYNCIO_TIME = Union[int, float]
 
 
 class FutureStatus(Enum):
-    PENDING = 1
-    RUNNING = 2
-    CANCELLED = 3
-    CANCELLED_AND_NOTIFIED = 4
-    FINISHED = 5
+    PENDING = PENDING
+    RUNNING = RUNNING
+    CANCELLED = CANCELLED
+    CANCELLED_AND_NOTIFIED = CANCELLED_AND_NOTIFIED
+    FINISHED = FINISHED
 
 
 class _QRunnable(QRunnable):
@@ -71,6 +78,29 @@ class PythonicQFuture(QObject, Future):
 
         self._cond = PythonicQWaitCondition()
         self._state: "FutureStatus" = FutureStatus.PENDING
+
+    def __repr__(self):
+        with self._cond:
+            if self._state == FINISHED:
+                if self._exception:
+                    return "<%s at %#x state=%s raised %s>" % (
+                        self.__class__.__name__,
+                        id(self),
+                        self._state.value,
+                        self._exception.__class__.__name__,
+                    )
+                else:
+                    return "<%s at %#x state=%s returned %s>" % (
+                        self.__class__.__name__,
+                        id(self),
+                        self._state.value,
+                        self._result.__class__.__name__,
+                    )
+            return "<%s at %#x state=%s>" % (
+                self.__class__.__name__,
+                id(self),
+                self._state.value,
+            )
 
     @property
     def future_id(self) -> str:
@@ -253,6 +283,8 @@ class QThreadPoolExecutor(Executor):
 
 
 class PythonicQTimer(QTimer):
+    timeout: SIGNAL_TYPE
+
     def cancel(self):
         self.stop()
 

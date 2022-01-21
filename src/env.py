@@ -8,8 +8,8 @@ from .types.unbound import SIGNAL_TYPE
 
 if TYPE_CHECKING:
     # For static type checking, feel free to set the Qt library of your choice here
-    from PySide2 import QtCore as _TypedQtCore
-    from PySide2 import QtWidgets as _TypedQtWidgets
+    from PyQt5 import QtCore as _TypedQtCore
+    from PyQt5 import QtWidgets as _TypedQtWidgets
 
 
 _log = logging.getLogger(__name__)
@@ -114,6 +114,8 @@ QThreadPool: Type["_TypedQtCore.QThreadPool"] = _QtCore.QThreadPool
 QRunnable: Type["_TypedQtCore.QRunnable"] = _QtCore.QRunnable
 QEvent: Type["_TypedQtCore.QEvent"] = _QtCore.QEvent
 QDeadlineTimer: Type["_TypedQtCore.QDeadlineTimer"] = _QtCore.QDeadlineTimer
+QTimerEvent: Type["_TypedQtCore.QTimerEvent"] = _QtCore.QTimerEvent
+QTime: Type["_TypedQtCore.QTime"] = _QtCore.QTime
 
 
 # QtWidgets
@@ -133,3 +135,13 @@ class QCoreApplication(_QCoreApplication):
             return super().sendPostedEvents(receiver=receiver, eventType=event_type)
         else:
             return super().sendPostedEvents(receiver=receiver, event_type=event_type)
+
+    # Enable this function to view all events processed in the qapp
+    # def notify(self, obj: "QObject", event: "QEvent"):
+    #     ret = super().notify(obj, event)
+    #     try:
+    #         _log.debug("Notify %s %s (%s) returned %s", obj, event, event.type(), ret)
+    #         tb = traceback.extract_stack()
+    #         _log.debug("".join(tb.format()))
+    #     finally:
+    #         return ret

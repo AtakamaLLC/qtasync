@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 
 def qt_timeout(time_secs: Union[float, PYTHON_TIME]) -> QT_TIME:
-    return QT_TIME(int(time_secs * 1000))
+    return QT_TIME(time_secs * 1000)
 
 
 def py_timeout(time_msecs: Union[int, QT_TIME]) -> PYTHON_TIME:
