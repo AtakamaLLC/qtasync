@@ -83,7 +83,7 @@ else:
 # Expose Qt components and modules for importation
 # QtCore
 QtCore: "_TypedQtCore" = _QtCore
-_QCoreApplication: Type["_TypedQtCore.QCoreApplication"] = _QtCore.QCoreApplication
+QCoreApplication: Type["_TypedQtCore.QCoreApplication"] = _QtCore.QCoreApplication
 try:
     Slot: "_TypedQtCore.Slot" = _QtCore.Slot
 except AttributeError:
@@ -121,27 +121,52 @@ QTime: Type["_TypedQtCore.QTime"] = _QtCore.QTime
 # QtWidgets
 QApplication: Type["_TypedQtWidgets.QApplication"] = _QtWidgets.QApplication
 
+if TYPE_CHECKING:
+    # Subclass of whatever QApplication is with some type hints and implementation-independent shims
+    # But this is never actually created, as there is a bug where subclasses of a QCoreApp will cause segfaults
+    # on exit: https://bugreports.qt.io/browse/PYSIDE-1447
+    class QCoreApplication(QCoreApplication):
+        aboutToQuit: SIGNAL_TYPE
+        applicationNameChanged: SIGNAL_TYPE
+        applicationVersionChanged: SIGNAL_TYPE
+        organizationDomainChanged: SIGNAL_TYPE
+        organizationNameChanged: SIGNAL_TYPE
 
-# Subclass of whatever QApplication is with some type hints and implementation-independent shims
-class QCoreApplication(_QCoreApplication):
-    aboutToQuit: SIGNAL_TYPE
-    applicationNameChanged: SIGNAL_TYPE
-    applicationVersionChanged: SIGNAL_TYPE
-    organizationDomainChanged: SIGNAL_TYPE
-    organizationNameChanged: SIGNAL_TYPE
+        def send_posted_events(
+            self: "_TypedQtCore.QCoreApplication",
+            receiver: "QObject" = None,
+            event_type=0,
+        ):
+            ...
 
-    def send_posted_events(self, receiver: "QObject" = None, event_type=0):
-        if QtModuleName in (PYQT5_MODULE_NAME, PYQT6_MODULE_NAME):
-            return super().sendPostedEvents(receiver=receiver, eventType=event_type)
-        else:
-            return super().sendPostedEvents(receiver=receiver, event_type=event_type)
 
-    # Enable this function to view all events processed in the qapp
-    # def notify(self, obj: "QObject", event: "QEvent"):
-    #     ret = super().notify(obj, event)
-    #     try:
-    #         _log.debug("Notify %s %s (%s) returned %s", obj, event, event.type(), ret)
-    #         tb = traceback.extract_stack()
-    #         _log.debug("".join(tb.format()))
-    #     finally:
-    #         return ret
+def send_posted_events(
+    self: "_TypedQtCore.QCoreApplication", receiver: "QObject" = None, event_type=0
+):
+    if QtModuleName in (PYQT5_MODULE_NAME, PYQT6_MODULE_NAME):
+        return self.sendPostedEvents(receiver=receiver, eventType=event_type)
+    else:
+        return self.sendPostedEvents(receiver=receiver, event_type=event_type)
+
+
+# Enable this function to view all events processed in the qapp
+if os.environ.get("LOG_QT_EVENTS", False):
+    import traceback
+
+    orig_notify = QCoreApplication.notify
+
+    def notify(self: "_TypedQtCore.QCoreApplication", obj: "QObject", event: "QEvent"):
+        ret = orig_notify(self, obj, event)
+        try:
+            _log.debug("Notify %s %s (%s) returned %s", obj, event, event.type(), ret)
+            tb = traceback.extract_stack()
+            _log.debug("".join(tb.format()))
+        except:
+            _log.warning(
+                "Failed to analyze QCoreApp event (%s, %s, %s)", self, obj, event
+            )
+        finally:
+            return ret
+
+    QCoreApplication.notify = notify
+QCoreApplication.send_posted_events = send_posted_events
