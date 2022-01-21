@@ -19,9 +19,11 @@ jobs:
       with:
         python-version: "3.9"
     - name: Set up OpenGL
-      uses: openrndr/setup-opengl@v1.1
     - run: |
-        xvfb-run glxinfo
+        sudo add-apt-repository ppa:kisak/kisak-mesa
+        sudo apt update
+        sudo apt upgrade
+        glxinfo
     - name: Install dependencies
       run: |
         make requirements
