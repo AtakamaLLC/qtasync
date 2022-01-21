@@ -19,7 +19,7 @@ jobs:
       with:
         python-version: "3.9"
     - name: Set up OpenGL
-    - run: |
+      run: |
         sudo add-apt-repository ppa:kisak/kisak-mesa
         sudo apt update
         sudo apt upgrade
