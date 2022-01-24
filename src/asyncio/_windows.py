@@ -12,9 +12,9 @@ except ImportError:  # noqa
 
 import math
 
-from src.concurrent.qasync.util import _make_signaller
-from src.concurrent.qasync.loop import _QEventLoop
-from ...env import QMutex, QMutexLocker, QThread, QSemaphore
+from src.asyncio.util import _make_signaller
+from src.asyncio.loop import _QEventLoop
+from src.env import QMutex, QMutexLocker, QThread, QSemaphore
 
 if TYPE_CHECKING:
     from src.env import QObject

@@ -2,9 +2,9 @@ import logging
 from typing import Optional
 
 from src.env import (
+    QSemaphore,
     QMutex,
     QRecursiveMutex,
-    QObject,
     QWaitCondition,
     QtModuleName,
     PYQT5_MODULE_NAME,
@@ -12,9 +12,9 @@ from src.env import (
     PYSIDE6_MODULE_NAME,
 )
 
-from ..types.unbound import SIGNAL_TYPE
-from ..types.bound import QT_TIME, PYTHON_TIME
-from ..util import qt_timeout, mk_q_deadline_timer
+from src.types.unbound import SIGNAL_TYPE
+from src.types.bound import QT_TIME, PYTHON_TIME
+from src.util import qt_timeout, mk_q_deadline_timer
 
 log = logging.getLogger(__name__)
 
@@ -84,11 +84,8 @@ class PythonicQWaitCondition:
         self._cond.wakeOne()
 
 
-class QThreadEvent(QObject):
-    destroyed: SIGNAL_TYPE
-
-    def __init__(self, parent: QObject = None):
-        super().__init__(parent)
+class QThreadEvent:
+    def __init__(self):
         self._is_set = False
         self._flag_mutex = PythonicQMutex()
         self._cond = PythonicQWaitCondition()
@@ -101,7 +98,8 @@ class QThreadEvent(QObject):
         with self._flag_mutex:
             if not self._is_set:
                 self._is_set = True
-                self._cond.notify_all()
+                with self._cond:
+                    self._cond.notify_all()
 
     def clear(self):
         with self._flag_mutex:
@@ -118,4 +116,16 @@ class QThreadEvent(QObject):
             if self._is_set:
                 return True
 
-        return self._cond.wait(timeout)
+        with self._cond:
+            return self._cond.wait(timeout)
+
+
+class PythonicQSemaphore(QSemaphore):
+    def __init__(self, value=1):
+        super().__init__(n=value)
+
+    def acquire(self, blocking=True, timeout: PYTHON_TIME = None) -> bool:
+        if blocking:
+            return self.tryAcquire(1, qt_timeout(timeout))
+        else:
+            return self.tryAcquire(1)

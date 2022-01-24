@@ -1,7 +1,7 @@
 import logging
 import os
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, Any, Optional, Union
+from typing import Callable, Any, Optional
 from concurrent.futures import Executor, Future, CancelledError, InvalidStateError
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from concurrent.futures._base import (
@@ -17,21 +17,13 @@ from src.env import (
     Signal,
     QThreadPool,
     QRunnable,
-    QTimer,
 )
 
-from .locks import PythonicQMutex, PythonicQWaitCondition
-from ..util import qt_timeout
-from ..types.bound import PYTHON_TIME
-from ..types.unbound import SIGNAL_TYPE
-
-if TYPE_CHECKING:
-    from src.env import SignalInstance  # noqa: F401
+from src.threading import PythonicQMutex, PythonicQWaitCondition
+from src.types.bound import PYTHON_TIME
+from src.types.unbound import SIGNAL_TYPE
 
 log = logging.getLogger(__name__)
-
-
-ASYNCIO_TIME = Union[int, float]
 
 
 class FutureStatus(Enum):
@@ -280,21 +272,3 @@ class QThreadPoolExecutor(Executor):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.shutdown()
-
-
-class PythonicQTimer(QTimer):
-    timeout: SIGNAL_TYPE
-
-    def cancel(self):
-        self.stop()
-
-    @classmethod
-    def singleShot(
-        cls, duration: PYTHON_TIME, func: Callable[[], Any], parent: "QObject" = None
-    ) -> "PythonicQTimer":
-        t = cls(parent=parent)
-        t.setSingleShot(True)
-        t.setInterval(qt_timeout(duration))
-        t.timeout.connect(func)
-        t.start()
-        return t

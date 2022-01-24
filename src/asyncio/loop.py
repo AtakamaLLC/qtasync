@@ -9,7 +9,7 @@ from src.env import QCoreApplication, QSocketNotifier, QObject
 from src.concurrent.futures import QThreadPoolExecutor
 from src.types.unbound import SIGNAL_TYPE
 from src.types.bound import PYTHON_TIME
-from src.concurrent.qasync.util import _SimpleTimer, _make_signaller, _fileno
+from src.asyncio.util import _SimpleTimer, _make_signaller, _fileno
 
 log = logging.getLogger(__name__)
 
