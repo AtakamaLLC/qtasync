@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
 import subprocess
 
-from src.concurrent.asyncio.env import QEventLoop
+from src.asyncio import QEventLoop
 from src.concurrent.futures import QThreadPoolExecutor
 
 import pytest
@@ -292,14 +292,15 @@ def sock_pair(request):
 
     If socket.socketpair isn't available, we emulate it.
     """
+    client_sock = srv_sock = None
 
     def fin():
+        nonlocal client_sock, srv_sock
         if client_sock is not None:
             client_sock.close()
         if srv_sock is not None:
             srv_sock.close()
 
-    client_sock = srv_sock = None
     request.addfinalizer(fin)
 
     # See if socketpair() is available.

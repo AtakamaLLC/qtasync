@@ -12,9 +12,9 @@ from src.env import (
     PYSIDE6_MODULE_NAME,
 )
 
-from ..types.unbound import SIGNAL_TYPE
-from ..types.bound import QT_TIME, PYTHON_TIME
-from ..util import qt_timeout, mk_q_deadline_timer
+from src.types.unbound import SIGNAL_TYPE
+from src.types.bound import QT_TIME, PYTHON_TIME
+from src.util import qt_timeout, mk_q_deadline_timer
 
 log = logging.getLogger(__name__)
 

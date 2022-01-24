@@ -1,7 +1,7 @@
 import logging
 import os
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, Any, Optional, Union
+from typing import TYPE_CHECKING, Callable, Any, Optional
 from concurrent.futures import Executor, Future, CancelledError, InvalidStateError
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from concurrent.futures._base import (
@@ -20,7 +20,7 @@ from src.env import (
     QTimer,
 )
 
-from .locks import PythonicQMutex, PythonicQWaitCondition
+from src.threading.locks import PythonicQMutex, PythonicQWaitCondition
 from ..util import qt_timeout
 from ..types.bound import PYTHON_TIME
 from ..types.unbound import SIGNAL_TYPE
@@ -29,9 +29,6 @@ if TYPE_CHECKING:
     from src.env import SignalInstance  # noqa: F401
 
 log = logging.getLogger(__name__)
-
-
-ASYNCIO_TIME = Union[int, float]
 
 
 class FutureStatus(Enum):
