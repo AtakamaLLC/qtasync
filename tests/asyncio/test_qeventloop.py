@@ -78,9 +78,6 @@ def executor(request):
     return exc
 
 
-# ExceptionTester = type(
-#     "ExceptionTester", (Exception,), {}
-# )  # to make flake8 not complain
 class ExceptionTester(Exception):
     pass
 
