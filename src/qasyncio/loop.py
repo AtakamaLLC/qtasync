@@ -61,7 +61,7 @@ class _QEventLoop(asyncio.BaseEventLoop):
                 self.__last_exit_code = self.__app.exec_()
             except AttributeError:
                 self.__last_exit_code = self.__app.exec()
-            except:
+            except:  # noqa: E722
                 log.exception("Failed to run QCoreApplication event loop")
                 self.__last_exit_code = -1
             self.__log_debug(

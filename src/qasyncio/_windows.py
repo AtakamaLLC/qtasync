@@ -90,7 +90,7 @@ class _IocpProactor(windows_events.IocpProactor):
         with QMutexLocker(self._lock):
             return super().send(conn, buf, flags)
 
-    def _poll(self, timeout=None):
+    def _poll(self, timeout=None):  # noqa: C901
         """Override in order to handle events in a threadsafe manner."""
         if timeout is None:
             ms = UINT32_MAX  # wait for eternity

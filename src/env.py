@@ -166,7 +166,7 @@ if os.environ.get("LOG_QT_EVENTS", False):
             _log.debug("Notify %s %s (%s) returned %s", obj, event, event.type(), ret)
             tb = traceback.extract_stack()
             _log.debug("".join(tb.format()))
-        except:
+        except:  # noqa: E722
             _log.warning(
                 "Failed to analyze QCoreApp event (%s, %s, %s)", self, obj, event
             )

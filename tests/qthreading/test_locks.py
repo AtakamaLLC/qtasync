@@ -1,12 +1,11 @@
 import logging
-from typing import Type, Union, Tuple
-from threading import Lock, RLock, Condition, Event, Thread, Semaphore
+from typing import Type, Union
+from threading import Condition, Event, Thread, Semaphore
 
 import pytest
 
 from src.env import QThread
 from src.qthreading import (
-    PythonicQMutex,
     PythonicQWaitCondition,
     QThreadEvent,
     PythonicQThread,
