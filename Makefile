@@ -1,7 +1,3 @@
-requirements-all:
-	python -m pip install --upgrade pip
-	python -m pip install -r requirements.txt
-
 requirements:
 	bash ./install_requirements.sh
 
