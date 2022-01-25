@@ -1,12 +1,11 @@
 import logging
-from typing import Type, Union, Tuple
-from threading import Lock, RLock, Condition, Event, Thread, Semaphore
+from typing import Type, Union
+from threading import Condition, Event, Thread, Semaphore
 
 import pytest
 
 from src.env import QThread
-from src.threading import (
-    PythonicQMutex,
+from src.qthreading import (
     PythonicQWaitCondition,
     QThreadEvent,
     PythonicQThread,
@@ -115,4 +114,20 @@ def test_thread_event_wait(thread_cls: THREAD_CLS):
 
     thread_event.set()
     t.join(0.1)
+    assert not t.is_alive()
+
+
+def test_semaphore(thread_cls: THREAD_CLS):
+    sem_cls = get_semaphore(thread_cls)
+    sem = sem_cls(value=2)
+    assert sem.acquire(blocking=False)
+    assert sem.acquire(blocking=False)
+    assert not sem.acquire(blocking=False)
+
+    t = thread_cls(target=sem.release, args=[2])
+    t.start()
+    assert sem.acquire(blocking=True, timeout=1.0)
+    assert sem.acquire(blocking=False)
+    assert not sem.acquire(blocking=False)
+    t.join(timeout=1.0)
     assert not t.is_alive()

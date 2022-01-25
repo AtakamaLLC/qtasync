@@ -6,10 +6,10 @@ import time
 from typing import Callable
 
 from src.env import QCoreApplication, QSocketNotifier, QObject
-from src.concurrent.futures import QThreadPoolExecutor
+from src.qconcurrent.futures import QThreadPoolExecutor
 from src.types.unbound import SIGNAL_TYPE
 from src.types.bound import PYTHON_TIME
-from src.asyncio.util import _SimpleTimer, _make_signaller, _fileno
+from src.qasyncio.util import _SimpleTimer, _make_signaller, _fileno
 
 log = logging.getLogger(__name__)
 
@@ -61,7 +61,7 @@ class _QEventLoop(asyncio.BaseEventLoop):
                 self.__last_exit_code = self.__app.exec_()
             except AttributeError:
                 self.__last_exit_code = self.__app.exec()
-            except:
+            except:  # noqa: E722
                 log.exception("Failed to run QCoreApplication event loop")
                 self.__last_exit_code = -1
             self.__log_debug(

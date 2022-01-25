@@ -22,12 +22,18 @@ jobs:
       run: |
         sudo apt update
         sudo apt-get install libopengl0 freeglut3 freeglut3-dev
+    - name: Prepare Virtual Env
+      run: |
+        make prepare-venv
     - name: Install dependencies
       run: |
+        source env/bin/activate
         make requirements
     - name: Lint with flake8
       run: |
+        source env/bin/activate
         make lint
     - name: Test with pytest
       run: |
+        source env/bin/activate
         make test

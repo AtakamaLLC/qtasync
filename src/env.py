@@ -8,8 +8,8 @@ from .types.unbound import SIGNAL_TYPE
 
 if TYPE_CHECKING:
     # For static type checking, feel free to set the Qt library of your choice here
-    from PyQt5 import QtCore as _TypedQtCore
-    from PyQt5 import QtWidgets as _TypedQtWidgets
+    from PyQt6 import QtCore as _TypedQtCore
+    from PyQt6 import QtWidgets as _TypedQtWidgets
 
 
 _log = logging.getLogger(__name__)
@@ -116,6 +116,15 @@ QEvent: Type["_TypedQtCore.QEvent"] = _QtCore.QEvent
 QDeadlineTimer: Type["_TypedQtCore.QDeadlineTimer"] = _QtCore.QDeadlineTimer
 QTimerEvent: Type["_TypedQtCore.QTimerEvent"] = _QtCore.QTimerEvent
 QTime: Type["_TypedQtCore.QTime"] = _QtCore.QTime
+QtDebugMsg: Type["_TypedQtCore.QtMsgType.QtDebugMsg"] = _QtCore.QtMsgType.QtDebugMsg
+QtInfoMsg: Type["_TypedQtCore.QtMsgType.QtInfoMsg"] = _QtCore.QtMsgType.QtInfoMsg
+QtWarningMsg: Type[
+    "_TypedQtCore.QtMsgType.QtWarningMsg"
+] = _QtCore.QtMsgType.QtWarningMsg
+QtCriticalMsg: Type[
+    "_TypedQtCore.QtMsgType.QtCriticalMsg"
+] = _QtCore.QtMsgType.QtCriticalMsg
+QtFatalMsg: Type["_TypedQtCore.QtMsgType.QtFatalMsg"] = _QtCore.QtMsgType.QtFatalMsg
 
 
 # QtWidgets
@@ -161,7 +170,7 @@ if os.environ.get("LOG_QT_EVENTS", False):
             _log.debug("Notify %s %s (%s) returned %s", obj, event, event.type(), ret)
             tb = traceback.extract_stack()
             _log.debug("".join(tb.format()))
-        except:
+        except:  # noqa: E722
             _log.warning(
                 "Failed to analyze QCoreApp event (%s, %s, %s)", self, obj, event
             )
