@@ -8,8 +8,8 @@ from .types.unbound import SIGNAL_TYPE
 
 if TYPE_CHECKING:
     # For static type checking, feel free to set the Qt library of your choice here
-    from PyQt5 import QtCore as _TypedQtCore
-    from PyQt5 import QtWidgets as _TypedQtWidgets
+    from PyQt6 import QtCore as _TypedQtCore
+    from PyQt6 import QtWidgets as _TypedQtWidgets
 
 
 _log = logging.getLogger(__name__)
@@ -116,11 +116,15 @@ QEvent: Type["_TypedQtCore.QEvent"] = _QtCore.QEvent
 QDeadlineTimer: Type["_TypedQtCore.QDeadlineTimer"] = _QtCore.QDeadlineTimer
 QTimerEvent: Type["_TypedQtCore.QTimerEvent"] = _QtCore.QTimerEvent
 QTime: Type["_TypedQtCore.QTime"] = _QtCore.QTime
-QtDebugMsg: Type["_TypedQtCore.QtDebugMsg"] = _QtCore.QtDebugMsg
-QtInfoMsg: Type["_TypedQtCore.QtInfoMsg"] = _QtCore.QtInfoMsg
-QtWarningMsg: Type["_TypedQtCore.QtWarningMsg"] = _QtCore.QtWarningMsg
-QtCriticalMsg: Type["_TypedQtCore.QtCriticalMsg"] = _QtCore.QtCriticalMsg
-QtFatalMsg: Type["_TypedQtCore.QtFatalMsg"] = _QtCore.QtFatalMsg
+QtDebugMsg: Type["_TypedQtCore.QtMsgType.QtDebugMsg"] = _QtCore.QtMsgType.QtDebugMsg
+QtInfoMsg: Type["_TypedQtCore.QtMsgType.QtInfoMsg"] = _QtCore.QtMsgType.QtInfoMsg
+QtWarningMsg: Type[
+    "_TypedQtCore.QtMsgType.QtWarningMsg"
+] = _QtCore.QtMsgType.QtWarningMsg
+QtCriticalMsg: Type[
+    "_TypedQtCore.QtMsgType.QtCriticalMsg"
+] = _QtCore.QtMsgType.QtCriticalMsg
+QtFatalMsg: Type["_TypedQtCore.QtMsgType.QtFatalMsg"] = _QtCore.QtMsgType.QtFatalMsg
 
 
 # QtWidgets
