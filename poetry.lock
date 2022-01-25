@@ -500,6 +500,17 @@ optional = true
 python-versions = ">=3.5"
 
 [[package]]
+name = "pyqt5-stubs"
+version = "5.15.2.0"
+description = "PEP561 stub files for the PyQt5 framework"
+category = "main"
+optional = true
+python-versions = ">= 3.5"
+
+[package.extras]
+build = ["docker (==4.2.0)"]
+
+[[package]]
 name = "pyqt6"
 version = "6.2.2"
 description = "Python bindings for the Qt cross platform application toolkit"
@@ -715,7 +726,7 @@ optional = false
 python-versions = "*"
 
 [extras]
-PyQt5 = ["PyQt5"]
+PyQt5 = ["PyQt5", "PyQt5-stubs"]
 PyQt6 = ["PyQt6"]
 PySide2 = ["PySide2"]
 PySide6 = ["PySide6"]
@@ -723,7 +734,7 @@ PySide6 = ["PySide6"]
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.9"
-content-hash = "0737f9b3e5b6b1c31ce6745e703eff26dd9cf0bb265941cd029b3b5748ea5fb9"
+content-hash = "d84e282a0cd286ef75d6c0aef37323f92fb47e2874d5edde39db2c6f237ceecc"
 
 [metadata.files]
 atomicwrites = [
@@ -1073,6 +1084,10 @@ pyqt5-sip = [
     {file = "PyQt5_sip-12.9.0-cp39-cp39-win32.whl", hash = "sha256:4f8e05fe01d54275877c59018d8e82dcdd0bc5696053a8b830eecea3ce806121"},
     {file = "PyQt5_sip-12.9.0-cp39-cp39-win_amd64.whl", hash = "sha256:b09f4cd36a4831229fb77c424d89635fa937d97765ec90685e2f257e56a2685a"},
     {file = "PyQt5_sip-12.9.0.tar.gz", hash = "sha256:d3e4489d7c2b0ece9d203ae66e573939f7f60d4d29e089c9f11daa17cfeaae32"},
+]
+pyqt5-stubs = [
+    {file = "PyQt5-stubs-5.15.2.0.tar.gz", hash = "sha256:dc0dea66f02fe297fb0cddd5767fbf58275b54ecb67f69ebeb994e1553bfb9b2"},
+    {file = "PyQt5_stubs-5.15.2.0-py3-none-any.whl", hash = "sha256:4b750d04ffca1bb188615d1a4e7d655a1d81d30df6ee3488f0adfe09b78e3d36"},
 ]
 pyqt6 = [
     {file = "PyQt6-6.2.2-cp36-abi3-macosx_10_14_universal2.whl", hash = "sha256:6f983a42239a6b7829ceff718ea943b8034f8d9e5d796a0fcfda0bc53fbaf8e9"},

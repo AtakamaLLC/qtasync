@@ -4,6 +4,7 @@ import sys
 import os
 import ctypes
 import multiprocessing
+from typing import TYPE_CHECKING
 from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
 import subprocess
@@ -12,6 +13,9 @@ from src.qasyncio import QEventLoop
 from src.qconcurrent.futures import QThreadPoolExecutor
 
 import pytest
+
+if TYPE_CHECKING:
+    from tests.conftest import QtTestContext
 
 
 @pytest.fixture
@@ -338,7 +342,8 @@ def sock_pair(request):
     return client_sock, srv_sock
 
 
-def test_can_add_reader(loop, sock_pair):
+def test_can_add_reader(loop, sock_pair, qt_test: "QtTestContext"):
+    qt_test.add_ignored_qt_warning("QSocketNotifier: Invalid socket")
     """Verify that we can add a reader callback to an event loop."""
 
     def can_read():
@@ -436,7 +441,8 @@ def test_add_writer_after_closing(loop, sock_pair):
         loop._add_writer(client_sock.fileno(), lambda: None)
 
 
-def test_can_add_writer(loop, sock_pair):
+def test_can_add_writer(loop, sock_pair, qt_test: "QtTestContext"):
+    qt_test.add_ignored_qt_warning("QSocketNotifier: Invalid socket")
     """Verify that we can add a writer callback to an event loop."""
 
     def can_write():
@@ -460,7 +466,10 @@ def test_can_remove_writer(loop, sock_pair):
     assert not loop._write_notifiers, "Notifier should be removed"
 
 
-def test_add_reader_should_disable_qsocket_notifier_on_callback(loop, sock_pair):
+def test_add_reader_should_disable_qsocket_notifier_on_callback(
+    loop, sock_pair, qt_test: "QtTestContext"
+):
+    qt_test.add_ignored_qt_warning("QSocketNotifier: Invalid socket")
     """Verify that add_reader disables QSocketNotifier during callback."""
 
     def can_read():
@@ -492,7 +501,10 @@ def test_add_reader_should_disable_qsocket_notifier_on_callback(loop, sock_pair)
     loop.run_until_complete(asyncio.wait_for(fut, timeout=1.0))
 
 
-def test_add_writer_should_disable_qsocket_notifier_on_callback(loop, sock_pair):
+def test_add_writer_should_disable_qsocket_notifier_on_callback(
+    loop, sock_pair, qt_test: "QtTestContext"
+):
+    qt_test.add_ignored_qt_warning("QSocketNotifier: Invalid socket")
     """Verify that add_writer disables QSocketNotifier during callback."""
 
     def can_write():

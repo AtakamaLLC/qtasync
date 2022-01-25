@@ -54,6 +54,9 @@ class QtTestContext:
         self._unhandled_exceptions: list[Exception] = []
         self._ignored_qt_warnings = set()
 
+    def add_ignored_qt_warning(self, warning: str):
+        self._ignored_qt_warnings.add(warning)
+
     def add_exception(self, exception: Optional[Exception]):
         # We might want a mutex here, but it also doesn't really matter which exception fails the tests as long as
         # they are all in the logs, which they will be
