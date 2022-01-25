@@ -27,10 +27,13 @@ jobs:
         make prepare-venv
     - name: Install dependencies
       run: |
+        source env/bin/activate
         make requirements
     - name: Lint with flake8
       run: |
+        source env/bin/activate
         make lint
     - name: Test with pytest
       run: |
+        source env/bin/activate
         make test
