@@ -5,7 +5,7 @@ from threading import Lock, RLock, Condition, Event, Thread, Semaphore
 import pytest
 
 from src.env import QThread
-from src.threading import (
+from src.qthreading import (
     PythonicQMutex,
     PythonicQWaitCondition,
     QThreadEvent,

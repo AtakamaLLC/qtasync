@@ -4,7 +4,7 @@ import pytest
 
 from src.env import QThreadPool, QThread
 
-from src.concurrent.futures import PythonicQFuture, QThreadPoolExecutor, PythonicQMutex
+from src.qconcurrent.futures import PythonicQFuture, QThreadPoolExecutor, PythonicQMutex
 
 from ..util import process_events
 

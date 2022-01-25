@@ -21,7 +21,7 @@ from src.env import (
     QRunnable,
 )
 
-from src.threading import PythonicQMutex, PythonicQWaitCondition
+from src.qthreading import PythonicQMutex, PythonicQWaitCondition
 from src.types.bound import PYTHON_TIME
 from src.types.unbound import SIGNAL_TYPE
 

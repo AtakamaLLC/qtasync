@@ -4,7 +4,7 @@
 # BSD License
 
 import pytest
-from src.concurrent.futures import QThreadPoolExecutor
+from src.qconcurrent.futures import QThreadPoolExecutor
 
 
 @pytest.fixture
