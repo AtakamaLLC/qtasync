@@ -4,7 +4,7 @@ import sys
 from typing import TYPE_CHECKING, Optional, Callable
 from unittest.mock import Mock
 
-from src.env import QObject, QApplication
+from src.env import QObject, QApplication, QtModuleName, PYQT6_MODULE_NAME, QEvent
 from src.types.unbound import MESSAGE_HANDLER_TYPE, SIGNAL_TYPE
 from src.util import install_custom_qt_message_handler
 
@@ -12,13 +12,13 @@ from .enums import FailureCodes
 
 if TYPE_CHECKING:
     from src.env import QtCore
-    from tests.framework import SmartGuiTest
+    from tests.conftest import QtTestContext
 
 
 RESTORE_FN_TYPE = Callable[[], None]
 
 
-def install_exception_hook(smart_test: "SmartGuiTest") -> RESTORE_FN_TYPE:
+def install_exception_hook(smart_test: "QtTestContext") -> RESTORE_FN_TYPE:
     existing_ex_hook = sys.excepthook
 
     # Install a custom exception hook to save a ref to any exceptions that occur
@@ -142,3 +142,12 @@ class IgnoredIndexError(IndexError):
     @property
     def ignore(self):
         return True
+
+
+def process_events(qapp: "QCoreApplication"):
+    for _ in range(0, 5):
+        if QtModuleName == PYQT6_MODULE_NAME:
+            qapp.send_posted_events(event_type=QEvent.Type.DeferredDelete)
+        else:
+            qapp.send_posted_events(event_type=QEvent.DeferredDelete)
+        qapp.processEvents()

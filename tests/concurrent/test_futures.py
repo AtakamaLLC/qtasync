@@ -1,12 +1,12 @@
 import logging
 import time
+import pytest
 
 from src.env import QThreadPool, QThread
 
 from src.concurrent.futures import PythonicQFuture, QThreadPoolExecutor, PythonicQMutex
 
-from ..fixtures import process_events
-from tests.framework import SmartGuiTest
+from ..util import process_events
 
 logging.basicConfig(
     level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s"
@@ -14,121 +14,124 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 
-class TestPythonicQFuture(SmartGuiTest):
-    def test_basic_future(self):
-        future_executed = False
+def test_basic_future():
+    future_executed = False
 
-        def some_fn(pos_arg, kwarg=False):
-            nonlocal future_executed
-            if pos_arg == 4 and kwarg:
-                future_executed = True
+    def some_fn(pos_arg, kwarg=False):
+        nonlocal future_executed
+        if pos_arg == 4 and kwarg:
+            future_executed = True
 
-        pool = QThreadPoolExecutor()
-        pool.submit(some_fn, 4, kwarg=True)
-        pool.shutdown()
+    pool = QThreadPoolExecutor()
+    pool.submit(some_fn, 4, kwarg=True)
+    pool.shutdown()
 
-        self.assertTrue(future_executed)
+    assert future_executed
 
-    def test_cancel_future(self):
-        queued_runnable_finished = False
 
-        pool = QThreadPool()
-        # Only one thread, which will be blocked, to allow us to test cancellation for queued threads
-        pool.setMaxThreadCount(1)
-        executor = QThreadPoolExecutor(qthread_pool=pool)
+def test_cancel_future(application):
+    queued_runnable_finished = False
 
-        mutex = PythonicQMutex()
+    pool = QThreadPool()
+    # Only one thread, which will be blocked, to allow us to test cancellation for queued threads
+    pool.setMaxThreadCount(1)
+    executor = QThreadPoolExecutor(qthread_pool=pool)
+
+    mutex = PythonicQMutex()
+    mutex.lock()
+
+    def blocking_runnable():
+        log.info("Waiting on blocked mutex")
         mutex.lock()
+        log.info("Blocked mutex unlocked")
+        return 5
 
-        def blocking_runnable():
-            log.info("Waiting on blocked mutex")
-            mutex.lock()
-            log.info("Blocked mutex unlocked")
-            return 5
+    def queued_runnable():
+        nonlocal queued_runnable_finished
+        queued_runnable_finished = True
+        log.error("Queued runnable executed")
 
-        def queued_runnable():
-            nonlocal queued_runnable_finished
-            queued_runnable_finished = True
-            log.error("Queued runnable executed")
+    blocking_future = executor.submit(blocking_runnable)
+    queued_future = executor.submit(queued_runnable)
 
-        blocking_future = executor.submit(blocking_runnable)
-        queued_future = executor.submit(queued_runnable)
+    # Sleep until the blocking future has started
+    initial_time = time.monotonic()
+    while not blocking_future.running():
+        # And process events while we're sleeping
+        process_events(application)
 
-        # Sleep until the blocking future has started
-        initial_time = time.monotonic()
-        while not blocking_future.running():
-            # And process events while we're sleeping
-            process_events(self.presenter)
+        # Should take less than one second
+        if (time.monotonic() - initial_time) > 1:
+            raise TimeoutError
 
-            # Should take less than one second
-            if (time.monotonic() - initial_time) > 1:
-                raise TimeoutError
+    queued_future.cancel()
+    mutex.unlock()
 
-        queued_future.cancel()
-        mutex.unlock()
+    executor.shutdown()
+    assert 5 == blocking_future.result()
+    assert not queued_runnable_finished
+    assert queued_future.cancelled()
+    mutex.unlock()
 
-        executor.shutdown()
-        self.assertEqual(5, blocking_future.result())
-        self.assertFalse(queued_runnable_finished)
-        self.assertTrue(queued_future.cancelled())
-        mutex.unlock()
+    pool.deleteLater()
 
-        pool.deleteLater()
 
-    def test_wait_for_result(self):
-        executor = QThreadPoolExecutor()
+def test_wait_for_result():
+    executor = QThreadPoolExecutor()
 
-        def fn():
-            QThread.currentThread().sleep(1)
-            return 2
+    def fn():
+        QThread.currentThread().sleep(1)
+        return 2
 
-        future = executor.submit(fn)
+    future = executor.submit(fn)
 
-        self.assertEqual(2, future.result(timeout=None))
+    assert 2 == future.result(timeout=None)
 
-    def test_exception(self):
-        executor = QThreadPoolExecutor()
 
-        def fn():
-            raise RuntimeError
+def test_exception():
+    executor = QThreadPoolExecutor()
 
-        future = executor.submit(fn)
+    def fn():
+        raise RuntimeError
 
-        self.assertIsInstance(future.exception(timeout=1), RuntimeError)
-        with self.assertRaises(RuntimeError):
-            future.result(timeout=1)
+    future = executor.submit(fn)
 
-    def test_done_callback(self):
-        executor = QThreadPoolExecutor()
-        mutex = PythonicQMutex()
-        mutex.lock()
-        did_callback = False
+    assert isinstance(future.exception(timeout=1), RuntimeError)
+    with pytest.raises(RuntimeError):
+        future.result(timeout=1)
 
-        def fn():
-            with mutex:
-                return 3
 
-        def on_done(f: "PythonicQFuture"):
-            nonlocal did_callback
-            self.assertEqual(3, f.result())
-            did_callback = True
+def test_done_callback(application):
+    executor = QThreadPoolExecutor()
+    mutex = PythonicQMutex()
+    mutex.lock()
+    did_callback = False
 
-        future = executor.submit(fn)
-        # Case 1: Callback added before future finished
-        future.add_done_callback(on_done)
-        mutex.unlock()
-        self.assertEqual(3, future.result(timeout=600))
-        # Events must be processed so that the finished signal is emitted and processed
-        process_events(self.presenter)
-        self.assertTrue(did_callback)
+    def fn():
+        with mutex:
+            return 3
 
-        # Case 2: Callback added after future finished
-        did_callback2 = False
+    def on_done(f: "PythonicQFuture"):
+        nonlocal did_callback
+        assert 3 == f.result()
+        did_callback = True
 
-        def after_done(f: "PythonicQFuture"):
-            nonlocal did_callback2
-            self.assertEqual(3, f.result())
-            did_callback2 = True
+    future = executor.submit(fn)
+    # Case 1: Callback added before future finished
+    future.add_done_callback(on_done)
+    mutex.unlock()
+    assert 3 == future.result(timeout=600)
+    # Events must be processed so that the finished signal is emitted and processed
+    process_events(application)
+    assert did_callback
 
-        future.add_done_callback(after_done)
-        self.assertTrue(did_callback2)
+    # Case 2: Callback added after future finished
+    did_callback2 = False
+
+    def after_done(f: "PythonicQFuture"):
+        nonlocal did_callback2
+        assert 3 == f.result()
+        did_callback2 = True
+
+    future.add_done_callback(after_done)
+    assert did_callback2

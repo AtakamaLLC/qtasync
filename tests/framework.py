@@ -12,8 +12,8 @@ from .util import (
     replace_qt_message_handler,
     install_exception_hook,
     get_os_style,
+    process_events,
 )
-from .fixtures import process_events
 
 log = logging.getLogger(__name__)
 

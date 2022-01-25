@@ -1,5 +1,7 @@
 import logging
 import os
+import threading
+import sys
 from enum import Enum
 from typing import Callable, Any, Optional
 from concurrent.futures import Executor, Future, CancelledError, InvalidStateError
@@ -43,6 +45,8 @@ class _QRunnable(QRunnable):
         self.kwargs = kwargs
 
     def run(self):
+        if threading._trace_hook:
+            sys.settrace(threading._trace_hook)
         if not self.future.set_running_or_notify_cancel():
             return
 
