@@ -1,4 +1,4 @@
-# PySideExtensions
+# QtPy
 
 ## Overview
 Add `asyncio` support to applications running a `QCoreApplication` or one of its subprocesses by
