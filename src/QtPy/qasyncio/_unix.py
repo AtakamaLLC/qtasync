@@ -10,9 +10,9 @@ import selectors
 import collections
 import logging
 
-from src.qasyncio.util import _fileno
-from src.qasyncio.loop import _QEventLoop
-from src.env import QSocketNotifier
+from src.QtPy.qasyncio.util import _fileno
+from src.QtPy.qasyncio.loop import _QEventLoop
+from src.QtPy.env import QSocketNotifier
 
 log = logging.getLogger(__name__)
 

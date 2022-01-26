@@ -4,8 +4,8 @@ from threading import Condition, Event, Thread, Semaphore
 
 import pytest
 
-from src.env import QThread
-from src.qthreading import (
+from src.QtPy.env import QThread
+from src.QtPy.qthreading import (
     PythonicQWaitCondition,
     QThreadEvent,
     PythonicQThread,

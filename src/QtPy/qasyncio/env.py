@@ -4,7 +4,7 @@ import contextlib
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.qasyncio.loop import _QEventLoop
+    from src.QtPy.qasyncio.loop import _QEventLoop
 
 
 if os.name == "nt":
