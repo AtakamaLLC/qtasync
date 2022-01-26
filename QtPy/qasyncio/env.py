@@ -4,15 +4,15 @@ import contextlib
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from src.QtPy.qasyncio.loop import _QEventLoop
+    from QtPy.qasyncio.loop import _QEventLoop
 
 
 if os.name == "nt":
-    from ._windows import QProactorEventLoop
+    from QtPy.qasyncio._windows import QProactorEventLoop
 
     QEventLoop = QProactorEventLoop
 else:
-    from ._unix import QSelectorEventLoop  # noqa
+    from QtPy.qasyncio._unix import QSelectorEventLoop  # noqa
 
     QEventLoop = QSelectorEventLoop
 
