@@ -1,11 +1,13 @@
 import logging
 from typing import Type, Union
-from threading import Condition, Event, Thread, Semaphore
+from threading import Condition, Event, Thread, Semaphore, Lock, RLock
+from unittest.mock import patch
 
 import pytest
 
 from QtPy.env import QThread
 from QtPy.qthreading import (
+    PythonicQMutex,
     PythonicQWaitCondition,
     QThreadEvent,
     PythonicQThread,
@@ -14,6 +16,7 @@ from QtPy.qthreading import (
 
 log = logging.getLogger(__name__)
 
+MUTEX = Union["Lock", "RLock", "PythonicQMutex"]
 THREAD_EVT = Union["Event", "QThreadEvent"]
 CONDITION = Union["Condition", "PythonicQWaitCondition"]
 THREAD_CLS = Union[Type["Thread"], Type["PythonicQThread"]]
@@ -31,6 +34,15 @@ def thread_event(request):
     evt_cls: Union[Type["Event"], Type["QThreadEvent"]] = request.param
     evt = evt_cls()
     yield evt
+
+
+def get_mutex(thread_type, recursive: bool = False) -> Type[MUTEX]:
+    if issubclass(thread_type, Thread):
+        return RLock if recursive else Lock
+    elif issubclass(thread_type, QThread):
+        return PythonicQMutex
+    else:
+        raise RuntimeError("Unexpected thread type %s", thread_type)
 
 
 def get_thread_event(thread_type) -> Type[THREAD_EVT]:
@@ -131,3 +143,82 @@ def test_semaphore(thread_cls: THREAD_CLS):
     assert not sem.acquire(blocking=False)
     t.join(timeout=1.0)
     assert not t.is_alive()
+
+
+def test_mutex_with_time_conversion():
+    mutex = PythonicQMutex()
+
+    with patch("QtPy.util.log.warning") as log_warning, patch(
+        "QtPy.util._timeout_warning_threshold_max", 2.0
+    ), patch("QtPy.util._timeout_warning_threshold_min", 0.1), patch(
+        "QtPy.util._on_timeout_violation"
+    ) as on_violation:
+        with patch("QtPy.util._automatically_convert_timeout", True):
+            # Test time auto-conversion
+            # Time as a float is converted to Qt time: int(val * 1000)
+            mutex.acquire(timeout=1.0)
+            on_violation.assert_not_called()
+            log_warning.assert_not_called()
+
+            # Time as an int is considered to already be Qt time
+            mutex.acquire(timeout=1)
+            on_violation.assert_called_once_with()
+            assert (
+                "Timeout violates warning threshold"
+                in log_warning.mock_calls[0].args[0]
+            )
+            on_violation.reset_mock()
+            log_warning.reset_mock()
+
+            # Test min/max violation threshold
+            mutex.default_timeout = 3
+            on_violation.assert_called_once_with()
+            assert (
+                "Timeout violates warning threshold"
+                in log_warning.mock_calls[0].args[0]
+            )
+            on_violation.reset_mock()
+            log_warning.reset_mock()
+
+            mutex.default_timeout = 0.01
+            on_violation.assert_called_once_with()
+            assert (
+                "Timeout violates warning threshold"
+                in log_warning.mock_calls[0].args[0]
+            )
+            on_violation.reset_mock()
+            log_warning.reset_mock()
+
+            mutex.default_timeout = 0.5
+            on_violation.assert_not_called()
+            log_warning.assert_not_called()
+
+            try:
+                mutex.acquire(timeout=0.01)
+                on_violation.assert_called_once_with()
+                assert (
+                    "Timeout violates warning threshold"
+                    in log_warning.mock_calls[0].args[0]
+                )
+                on_violation.reset_mock()
+                log_warning.reset_mock()
+            finally:
+                mutex.release()
+
+        with patch("QtPy.util._automatically_convert_timeout", False):
+            # Test time auto-conversion
+            # Time as a float is converted to Qt time: int(val * 1000)
+            try:
+                mutex.acquire(timeout=1.0)
+                on_violation.assert_not_called()
+                log_warning.assert_not_called()
+            finally:
+                mutex.release()
+
+            try:
+                # Time as an int is considered to already be Qt time
+                mutex.acquire(timeout=1)
+                on_violation.assert_not_called()
+                log_warning.assert_not_called()
+            finally:
+                mutex.release()

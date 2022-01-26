@@ -24,29 +24,51 @@ class PythonicQMutex:
             self._mutex = QRecursiveMutex() if recursive else QMutex()
         else:
             self._mutex = QMutex(QMutex.Recursive if recursive else QMutex.NonRecursive)
-        self._default_timeout = qt_timeout(default_timeout)
+        self._default_timeout: QT_TIME = qt_timeout(default_timeout)
 
+    # Python methods to match threading.Lock/RLock's interface
     def __enter__(self):
-        if not self.tryLock(self._default_timeout):
+        if not self._mutex.tryLock(self._default_timeout):
             raise TimeoutError("QMutex timed out")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self._mutex.unlock()
 
-    def lock(self):
-        return self._mutex.lock()
+    def acquire(self, blocking=True, timeout: PYTHON_TIME = -1.0):
+        if blocking:
+            # Negative timeout in a QMutex behaves the same as a Python lock
+            return self._mutex.tryLock(qt_timeout(timeout))
+        else:
+            if timeout != -1.0:
+                raise ValueError("Cannot specify a timeout for a non-blocking call")
+            return self._mutex.try_lock()
 
-    def unlock(self):
-        return self._mutex.unlock()
+    def release(self):
+        self._mutex.unlock()
 
-    def tryLock(self, timeout: QT_TIME = 0) -> bool:
-        return self._mutex.tryLock(timeout)
+    @property
+    def default_timeout(self) -> float:
+        return self._default_timeout
 
-    def try_lock(self) -> bool:
-        return self._mutex.try_lock()
+    @default_timeout.setter
+    def default_timeout(self, new_timeout: float):
+        self._default_timeout = qt_timeout(new_timeout)
 
-    def isRecursive(self) -> bool:
+    def is_recursive(self) -> bool:
         return self._mutex.isRecursive()
+
+    # Qt methods, pass-through to underlying mutex
+    # def lock(self):
+    #     return self._mutex.lock()
+    #
+    # def unlock(self):
+    #     return self._mutex.unlock()
+    #
+    # def tryLock(self, timeout: QT_TIME = 0) -> bool:
+    #     return self._mutex.tryLock(timeout)
+    #
+    # def try_lock(self) -> bool:
+    #     return self._mutex.try_lock()
 
 
 class PythonicQWaitCondition:
@@ -54,6 +76,7 @@ class PythonicQWaitCondition:
         self._mutex = PythonicQMutex()
         self._cond = QWaitCondition()
 
+    # Python methods to match threading.Condition
     def __enter__(self):
         self.acquire()
 
@@ -61,10 +84,10 @@ class PythonicQWaitCondition:
         self.release()
 
     def acquire(self):
-        self._mutex.lock()
+        self._mutex.acquire()
 
     def release(self):
-        self._mutex.unlock()
+        self._mutex.release()
 
     def wait(self, timeout: PYTHON_TIME = None) -> bool:
         if timeout is None:
@@ -122,6 +145,15 @@ class QThreadEvent:
 class PythonicQSemaphore(QSemaphore):
     def __init__(self, value=1):
         super().__init__(n=value)
+
+    def __enter__(self):
+        self.acquire()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.release()
+
+    def release(self, n=1):
+        return super().release(n=n)
 
     def acquire(self, blocking=True, timeout: PYTHON_TIME = None) -> bool:
         if blocking:

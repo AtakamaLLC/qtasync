@@ -42,11 +42,11 @@ def test_cancel_future(application):
     executor = QThreadPoolExecutor(qthread_pool=pool)
 
     mutex = PythonicQMutex()
-    mutex.lock()
+    mutex.acquire()
 
     def blocking_runnable():
         log.info("Waiting on blocked mutex")
-        mutex.lock()
+        mutex.acquire()
         log.info("Blocked mutex unlocked")
         return 5
 
@@ -69,13 +69,13 @@ def test_cancel_future(application):
             raise TimeoutError
 
     queued_future.cancel()
-    mutex.unlock()
+    mutex.release()
 
     executor.shutdown()
     assert 5 == blocking_future.result()
     assert not queued_runnable_finished
     assert queued_future.cancelled()
-    mutex.unlock()
+    mutex.release()
 
     pool.deleteLater()
 
@@ -108,7 +108,7 @@ def test_exception():
 def test_done_callback(application):
     executor = QThreadPoolExecutor()
     mutex = PythonicQMutex()
-    mutex.lock()
+    mutex.acquire()
     did_callback = False
 
     def fn():
@@ -123,7 +123,7 @@ def test_done_callback(application):
     future = executor.submit(fn)
     # Case 1: Callback added before future finished
     future.add_done_callback(on_done)
-    mutex.unlock()
+    mutex.release()
     assert 3 == future.result(timeout=600)
     # Events must be processed so that the finished signal is emitted and processed
     process_events(application)

@@ -31,7 +31,7 @@ def install_exception_hook(smart_test: "QtTestContext") -> RESTORE_FN_TYPE:
             smart_test.add_exception(type(exc_val))
         except TypeError as err:
             smart_test.add_exception(err)
-        smart_test.presenter.exit(FailureCodes.EXCEPTION_RAISED)
+        # smart_test.presenter.exit(FailureCodes.EXCEPTION_RAISED)
         return existing_ex_hook(exc_type, exc_val, exc_tb)
 
     sys.excepthook = fail_on_ex
