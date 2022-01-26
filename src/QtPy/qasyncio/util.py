@@ -3,10 +3,10 @@ import logging
 import functools
 import asyncio
 
-from src.env import QObject, Signal, QCoreApplication, Slot, QTimerEvent
-from src.types.unbound import SIGNAL_TYPE
-from src.types.bound import PYTHON_TIME
-from src.util import qt_timeout
+from src.QtPy.env import QObject, Signal, QCoreApplication, Slot, QTimerEvent
+from src.QtPy.types.unbound import SIGNAL_TYPE
+from src.QtPy.types.bound import PYTHON_TIME
+from src.QtPy.util import qt_timeout
 
 log = logging.getLogger(__name__)
 
