@@ -6,7 +6,6 @@ authors = ["Brian Cefali <brian@atakama.com>"]
 
 [tool.poetry.dependencies]
 python = "~3.9"
-poetry = "^1.1.12"
 PySide6 = {version = "^6.2.2", optional = true}
 PySide2 = {version = "5.15.2", optional = true}
 PyQt5 = {version = "^5.15.6", optional = true}
