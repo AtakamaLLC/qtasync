@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
+from QtPy import set_timeout_compatibility_mode
 from QtPy.env import QThread
 from QtPy.qthreading import (
     PythonicQMutex,
@@ -146,79 +147,18 @@ def test_semaphore(thread_cls: THREAD_CLS):
 
 
 def test_mutex_with_time_conversion():
-    mutex = PythonicQMutex()
+    set_timeout_compatibility_mode(True)
+    try:
+        mutex = PythonicQMutex()
 
-    with patch("QtPy.util.log.warning") as log_warning, patch(
-        "QtPy.util._timeout_warning_threshold_max", 2.0
-    ), patch("QtPy.util._timeout_warning_threshold_min", 0.1), patch(
-        "QtPy.util._on_timeout_violation"
-    ) as on_violation:
-        with patch("QtPy.util._automatically_convert_timeout", True):
-            # Test time auto-conversion
-            # Time as a float is converted to Qt time: int(val * 1000)
+        with patch.object(mutex, "_mutex") as qt_mutex:
+            # Float is python timeout duration in seconds, converted to milliseconds
             mutex.acquire(timeout=1.0)
-            on_violation.assert_not_called()
-            log_warning.assert_not_called()
+            qt_mutex.tryLock.assert_called_once_with(1000)
+            qt_mutex.reset_mock()
 
-            # Time as an int is considered to already be Qt time
+            # Integer is Qt timeout duration in milliseconds, unchanged
             mutex.acquire(timeout=1)
-            on_violation.assert_called_once_with()
-            assert (
-                "Timeout violates warning threshold"
-                in log_warning.mock_calls[0].args[0]
-            )
-            on_violation.reset_mock()
-            log_warning.reset_mock()
-
-            # Test min/max violation threshold
-            mutex.default_timeout = 3
-            on_violation.assert_called_once_with()
-            assert (
-                "Timeout violates warning threshold"
-                in log_warning.mock_calls[0].args[0]
-            )
-            on_violation.reset_mock()
-            log_warning.reset_mock()
-
-            mutex.default_timeout = 0.01
-            on_violation.assert_called_once_with()
-            assert (
-                "Timeout violates warning threshold"
-                in log_warning.mock_calls[0].args[0]
-            )
-            on_violation.reset_mock()
-            log_warning.reset_mock()
-
-            mutex.default_timeout = 0.5
-            on_violation.assert_not_called()
-            log_warning.assert_not_called()
-
-            try:
-                mutex.acquire(timeout=0.01)
-                on_violation.assert_called_once_with()
-                assert (
-                    "Timeout violates warning threshold"
-                    in log_warning.mock_calls[0].args[0]
-                )
-                on_violation.reset_mock()
-                log_warning.reset_mock()
-            finally:
-                mutex.release()
-
-        with patch("QtPy.util._automatically_convert_timeout", False):
-            # Test time auto-conversion
-            # Time as a float is converted to Qt time: int(val * 1000)
-            try:
-                mutex.acquire(timeout=1.0)
-                on_violation.assert_not_called()
-                log_warning.assert_not_called()
-            finally:
-                mutex.release()
-
-            try:
-                # Time as an int is considered to already be Qt time
-                mutex.acquire(timeout=1)
-                on_violation.assert_not_called()
-                log_warning.assert_not_called()
-            finally:
-                mutex.release()
+            qt_mutex.tryLock.assert_called_once_with(1)
+    finally:
+        set_timeout_compatibility_mode(False)

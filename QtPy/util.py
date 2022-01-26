@@ -1,13 +1,7 @@
 import logging
-import traceback
 from typing import Union, Optional, Dict
 
-from QtPy import (
-    _automatically_convert_timeout,
-    _timeout_warning_threshold_max,
-    _timeout_warning_threshold_min,
-    _on_timeout_violation,
-)
+from QtPy import get_timeout_compatibility_mode
 from QtPy.env import QDeadlineTimer, QtCore
 
 from .types.bound import QT_TIME, PYTHON_TIME
@@ -18,32 +12,12 @@ log = logging.getLogger(__name__)
 
 
 def qt_timeout(time_secs: Union[float, PYTHON_TIME]) -> QT_TIME:
-    if _automatically_convert_timeout and isinstance(time_secs, int):
-        # If the auto convert global flag is set, do not convert python timeout to qt timeout (seconds -> milliseconds)
-        # This does, however, assume that the parameter is passed in as a float and not a small integer, if the caller
-        # is intending for the timeout value's unit to be evaluated as seconds not ms
-
-        # Ex. A call to QMutex may look like mutex.tryLock(1000), however PythonicQMutex's timeout is a float number of
-        #   seconds to wait, not milliseconds. If the caller naively calls pyqmutex.acquire(timeout=1000), then the
-        #   mutex will wait for 1000 seconds rather than 1.
-        qt_time = QT_TIME(time_secs)
+    if get_timeout_compatibility_mode() and isinstance(time_secs, int):
+        # If timeout compatibility mode is set, then integer timeouts are treated like Qt timeouts–durations measured
+        # in milliseconds–and if it is a float then it is treated like a python time duration (seconds as a float)
+        return QT_TIME(time_secs)
     else:
-        qt_time = QT_TIME(time_secs * 1000)
-
-    if _automatically_convert_timeout and (
-        (qt_time / 1000.0) < _timeout_warning_threshold_min
-        or time_secs > _timeout_warning_threshold_max
-    ):
-        log.warning(
-            "Timeout violates warning threshold (%s < %s < %s)\n%s",
-            _timeout_warning_threshold_min,
-            time_secs,
-            _timeout_warning_threshold_max,
-            "".join(traceback.format_stack()),
-        )
-        if _on_timeout_violation:
-            _on_timeout_violation()
-    return qt_time
+        return QT_TIME(time_secs * 1000)
 
 
 def py_timeout(time_msecs: Union[int, QT_TIME]) -> PYTHON_TIME:
