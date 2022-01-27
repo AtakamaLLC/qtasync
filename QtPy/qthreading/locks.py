@@ -19,7 +19,7 @@ log = logging.getLogger(__name__)
 
 
 class PythonicQMutex:
-    def __init__(self, default_timeout: PYTHON_TIME = 0, recursive: bool = False):
+    def __init__(self, default_timeout: PYTHON_TIME = -1, recursive: bool = False):
         if QtModuleName in (PYQT6_MODULE_NAME, PYSIDE6_MODULE_NAME):
             self._mutex = QRecursiveMutex() if recursive else QMutex()
         else:
