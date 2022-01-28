@@ -4,14 +4,14 @@ import sys
 from typing import TYPE_CHECKING, Optional, Callable
 from unittest.mock import Mock
 
-from QtPy.env import QObject, QApplication, QtModuleName, PYQT6_MODULE_NAME, QEvent
+from QtPy._env import QObject, QApplication, QtModuleName, PYQT6_MODULE_NAME, QEvent
 from QtPy.types.unbound import MESSAGE_HANDLER_TYPE, SIGNAL_TYPE
-from QtPy.util import install_custom_qt_message_handler
+from QtPy._util import install_custom_qt_message_handler
 
 from .enums import FailureCodes
 
 if TYPE_CHECKING:
-    from QtPy.env import QtCore
+    from QtPy._env import QtCore
     from tests.conftest import QtTestContext
 
 

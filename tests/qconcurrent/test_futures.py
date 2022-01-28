@@ -2,9 +2,9 @@ import logging
 import time
 import pytest
 
-from QtPy.env import QThreadPool, QThread
+from QtPy._env import QThreadPool, QThread
 
-from QtPy.qconcurrent.futures import (
+from QtPy.qconcurrent._futures import (
     PythonicQFuture,
     QThreadPoolExecutor,
     PythonicQMutex,

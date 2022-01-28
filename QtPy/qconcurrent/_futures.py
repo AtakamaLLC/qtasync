@@ -14,7 +14,7 @@ from concurrent.futures._base import (
     FINISHED,
 )
 
-from QtPy.env import (
+from QtPy._env import (
     QObject,
     Signal,
     QThreadPool,

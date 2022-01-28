@@ -1,12 +1,12 @@
 import threading
 from typing import TYPE_CHECKING, Optional
 
-from QtPy.env import QThread
-from QtPy.util import qt_timeout
+from QtPy._env import QThread
+from QtPy._util import qt_timeout
 from QtPy.types.bound import PYTHON_TIME
 
 if TYPE_CHECKING:
-    from QtPy.env import QObject
+    from QtPy._env import QObject
 
 
 class PythonicQThread(QThread):

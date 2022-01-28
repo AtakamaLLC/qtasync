@@ -6,7 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from QtPy import set_timeout_compatibility_mode
-from QtPy.env import QThread
+from QtPy._env import QThread
 from QtPy.qthreading import (
     PythonicQMutex,
     PythonicQWaitCondition,
@@ -14,6 +14,7 @@ from QtPy.qthreading import (
     PythonicQThread,
     PythonicQSemaphore,
 )
+
 
 log = logging.getLogger(__name__)
 

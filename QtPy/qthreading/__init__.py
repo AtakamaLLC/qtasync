@@ -1,11 +1,11 @@
-from .timer import PythonicQTimer
-from .locks import (
+from ._timer import PythonicQTimer
+from ._locks import (
     PythonicQMutex,
     PythonicQWaitCondition,
     QThreadEvent,
     PythonicQSemaphore,
 )
-from .thread import PythonicQThread
+from ._thread import PythonicQThread
 
 
 __all__ = [

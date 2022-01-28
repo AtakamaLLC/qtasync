@@ -10,7 +10,7 @@ import socket
 import subprocess
 
 from QtPy.qasyncio import QEventLoop
-from QtPy.qconcurrent.futures import QThreadPoolExecutor
+from QtPy.qconcurrent._futures import QThreadPoolExecutor
 
 import pytest
 

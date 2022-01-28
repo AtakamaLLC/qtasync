@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from QtPy.env import (
+from QtPy._env import (
     QSemaphore,
     QMutex,
     QRecursiveMutex,
@@ -13,7 +13,7 @@ from QtPy.env import (
 )
 
 from QtPy.types.bound import QT_TIME, PYTHON_TIME
-from QtPy.util import qt_timeout, mk_q_deadline_timer
+from QtPy._util import qt_timeout, mk_q_deadline_timer
 
 log = logging.getLogger(__name__)
 
