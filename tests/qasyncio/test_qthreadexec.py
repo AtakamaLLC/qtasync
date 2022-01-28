@@ -4,19 +4,19 @@
 # BSD License
 
 import pytest
-from QtPy.qconcurrent._futures import QThreadPoolExecutor
+from QtPy.qconcurrent._futures import QtThreadPoolExecutor
 
 
 @pytest.fixture
 def executor(request):
-    exe = QThreadPoolExecutor()
+    exe = QtThreadPoolExecutor()
     request.addfinalizer(exe.shutdown)
     return exe
 
 
 @pytest.fixture
 def shutdown_executor():
-    exe = QThreadPoolExecutor()
+    exe = QtThreadPoolExecutor()
     exe.shutdown()
     return exe
 

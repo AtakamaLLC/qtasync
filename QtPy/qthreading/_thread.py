@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from QtPy._env import QObject
 
 
-class PythonicQThread(QThread):
+class QtThread(QThread):
     def __init__(
         self,
         target=None,

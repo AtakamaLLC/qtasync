@@ -170,7 +170,7 @@ class _Selector(selectors.BaseSelector):
             return None
 
 
-class QSelectorEventLoop(_QEventLoop, asyncio.SelectorEventLoop):
+class QtSelectorEventLoop(_QEventLoop, asyncio.SelectorEventLoop):
     def __init__(self):
         self._signal_safe_callbacks = []
 

@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from QtPy._env import QObject
 
 
-class PythonicQTimer(QTimer):
+class QtTimer(QTimer):
     timeout: SIGNAL_TYPE
 
     def cancel(self):
@@ -18,7 +18,7 @@ class PythonicQTimer(QTimer):
     @classmethod
     def singleShot(
         cls, duration: PYTHON_TIME, func: Callable[[], Any], parent: "QObject" = None
-    ) -> "PythonicQTimer":
+    ) -> "QtTimer":
         t = cls(parent=parent)
         t.setSingleShot(True)
         t.setInterval(qt_timeout(duration))

@@ -26,7 +26,7 @@ log = logging.getLogger(__name__)
 UINT32_MAX = 0xFFFFFFFF
 
 
-class QProactorEventLoop(_QEventLoop, asyncio.ProactorEventLoop):
+class QtProactorEventLoop(_QEventLoop, asyncio.ProactorEventLoop):
 
     """Proactor based event loop."""
 

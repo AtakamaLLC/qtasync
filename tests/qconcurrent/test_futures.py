@@ -5,9 +5,9 @@ import pytest
 from QtPy._env import QThreadPool, QThread
 
 from QtPy.qconcurrent._futures import (
-    PythonicQFuture,
-    QThreadPoolExecutor,
-    PythonicQMutex,
+    QtFuture,
+    QtThreadPoolExecutor,
+    QtLock,
 )
 
 from ..util import process_events
@@ -26,7 +26,7 @@ def test_basic_future():
         if pos_arg == 4 and kwarg:
             future_executed = True
 
-    pool = QThreadPoolExecutor()
+    pool = QtThreadPoolExecutor()
     pool.submit(some_fn, 4, kwarg=True)
     pool.shutdown()
 
@@ -39,9 +39,9 @@ def test_cancel_future(application):
     pool = QThreadPool()
     # Only one thread, which will be blocked, to allow us to test cancellation for queued threads
     pool.setMaxThreadCount(1)
-    executor = QThreadPoolExecutor(qthread_pool=pool)
+    executor = QtThreadPoolExecutor(qthread_pool=pool)
 
-    mutex = PythonicQMutex()
+    mutex = QtLock()
     mutex.acquire()
 
     def blocking_runnable():
@@ -81,7 +81,7 @@ def test_cancel_future(application):
 
 
 def test_wait_for_result():
-    executor = QThreadPoolExecutor()
+    executor = QtThreadPoolExecutor()
 
     def fn():
         QThread.currentThread().sleep(1)
@@ -93,7 +93,7 @@ def test_wait_for_result():
 
 
 def test_exception():
-    executor = QThreadPoolExecutor()
+    executor = QtThreadPoolExecutor()
 
     def fn():
         raise RuntimeError
@@ -106,8 +106,8 @@ def test_exception():
 
 
 def test_done_callback(application):
-    executor = QThreadPoolExecutor()
-    mutex = PythonicQMutex()
+    executor = QtThreadPoolExecutor()
+    mutex = QtLock()
     mutex.acquire()
     did_callback = False
 
@@ -115,7 +115,7 @@ def test_done_callback(application):
         with mutex:
             return 3
 
-    def on_done(f: "PythonicQFuture"):
+    def on_done(f: "QtFuture"):
         nonlocal did_callback
         assert 3 == f.result()
         did_callback = True
@@ -132,7 +132,7 @@ def test_done_callback(application):
     # Case 2: Callback added after future finished
     did_callback2 = False
 
-    def after_done(f: "PythonicQFuture"):
+    def after_done(f: "QtFuture"):
         nonlocal did_callback2
         assert 3 == f.result()
         did_callback2 = True

@@ -1,3 +1,3 @@
-from QtPy.qasyncio._env import QEventLoop
+from QtPy.qasyncio._env import QtEventLoop
 
-__all__ = ["QEventLoop"]
+__all__ = ["QtEventLoop"]
