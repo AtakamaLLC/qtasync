@@ -2,6 +2,8 @@ import logging
 from typing import Type, Union
 from threading import Condition, Event, Thread, Semaphore, Lock, RLock
 from unittest.mock import patch
+from unittest import SkipTest, skipIf
+from test.lock_tests import BaseLockTests, LockTests, RLockTests
 
 import pytest
 
@@ -164,3 +166,60 @@ def test_mutex_with_time_conversion():
             qt_mutex.tryLock.assert_called_once_with(1)
     finally:
         set_timeout_compatibility_mode(False)
+
+
+def start_new_thread(function, args, kwargs=None):
+    t = QtThread(target=function, args=args, kwargs=kwargs)
+    t.start()
+    return t
+
+
+class QtLockTests(LockTests):
+    locktype = staticmethod(QtLock)
+    SKIP_THREADED_TESTS = True
+
+    def setUp(self):
+        super().setUp()
+        p = patch("test.lock_tests.start_new_thread", start_new_thread)
+        p.start()
+        self.addCleanup(p.stop)
+
+    def test_repr(self):
+        raise SkipTest("Nobody tells me how to repr a lock")
+
+    def test_locked_repr(self):
+        raise SkipTest("Nobody tells me how to repr a lock")
+
+    def test_acquire_destroy(self):
+        raise SkipTest("Destroying a locked QMutex is unsupported")
+
+    def test_at_fork_reinit(self):
+        raise RuntimeError("QtLock does not support _at_fork_reinit")
+
+    @skipIf(SKIP_THREADED_TESTS, "Skipping test that relies on threads")
+    def test_acquire_contended(self):
+        return super().test_acquire_contended()
+
+    @skipIf(SKIP_THREADED_TESTS, "Skipping test that relies on threads")
+    def test_different_thread(self):
+        return super().test_different_thread()
+
+    @skipIf(SKIP_THREADED_TESTS, "Skipping test that relies on threads")
+    def test_reacquire(self):
+        return super().test_reacquire()
+
+    @skipIf(SKIP_THREADED_TESTS, "Skipping test that relies on threads")
+    def test_thread_leak(self):
+        return super().test_thread_leak()
+
+    @skipIf(SKIP_THREADED_TESTS, "Skipping test that relies on threads")
+    def test_try_acquire_contended(self):
+        return super().test_try_acquire_contended()
+
+    @skipIf(SKIP_THREADED_TESTS, "Skipping test that relies on threads")
+    def test_with(self):
+        return super().test_with()
+
+
+class QtRLockTests(RLockTests):
+    locktype = staticmethod(QtRLock)
