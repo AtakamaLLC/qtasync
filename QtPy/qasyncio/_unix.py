@@ -10,9 +10,9 @@ import selectors
 import collections
 import logging
 
-from QtPy.qasyncio.util import _fileno
-from QtPy.qasyncio.loop import _QEventLoop
-from QtPy.env import QSocketNotifier
+from QtPy.qasyncio._util import _fileno
+from QtPy.qasyncio._loop import _QEventLoop
+from QtPy._env import QSocketNotifier
 
 log = logging.getLogger(__name__)
 
@@ -170,7 +170,7 @@ class _Selector(selectors.BaseSelector):
             return None
 
 
-class QSelectorEventLoop(_QEventLoop, asyncio.SelectorEventLoop):
+class QtSelectorEventLoop(_QEventLoop, asyncio.SelectorEventLoop):
     def __init__(self):
         self._signal_safe_callbacks = []
 

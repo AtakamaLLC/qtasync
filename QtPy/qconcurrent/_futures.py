@@ -14,14 +14,14 @@ from concurrent.futures._base import (
     FINISHED,
 )
 
-from QtPy.env import (
+from QtPy._env import (
     QObject,
     Signal,
     QThreadPool,
     QRunnable,
 )
 
-from QtPy.qthreading import PythonicQMutex, PythonicQWaitCondition
+from QtPy.qthreading import QtLock, QtCondition
 from QtPy.types.bound import PYTHON_TIME
 from QtPy.types.unbound import SIGNAL_TYPE
 
@@ -37,7 +37,7 @@ class FutureStatus(Enum):
 
 
 class _QRunnable(QRunnable):
-    def __init__(self, future: "PythonicQFuture", fn: Callable, args, kwargs):
+    def __init__(self, future: "QtFuture", fn: Callable, args, kwargs):
         super().__init__()
         self.future = future
         self.fn = fn
@@ -45,6 +45,8 @@ class _QRunnable(QRunnable):
         self.kwargs = kwargs
 
     def run(self):
+        # Get coverage on the runnable for tests, courtesy of @earonesty
+        # https://github.com/nedbat/coveragepy/issues/686#issuecomment-631760644
         if threading._trace_hook:
             sys.settrace(threading._trace_hook)
         if not self.future.set_running_or_notify_cancel():
@@ -62,7 +64,14 @@ class _QRunnable(QRunnable):
             self.future.set_result(result)
 
 
-class PythonicQFuture(QObject, Future):
+class QtFuture(QObject, Future):
+    """
+    This class is unique in that it not only implements the interface of
+    concurrent.futures.Future, but it also subclasses it. This is due to
+    the type requirement of asyncio.BaseEventLoop.run_in_executor() that the
+    return value of executor.submit() be an instance of concurrent.futures.Future.
+    """
+
     _finished: SIGNAL_TYPE = Signal()
 
     def __init__(self, parent: "QObject" = None):
@@ -72,7 +81,7 @@ class PythonicQFuture(QObject, Future):
         self._result: Optional[Any] = None
         self._exception: Optional[BaseException] = None
 
-        self._cond = PythonicQWaitCondition()
+        self._cond = QtCondition()
         self._state: "FutureStatus" = FutureStatus.PENDING
 
     def __repr__(self):
@@ -187,7 +196,7 @@ class PythonicQFuture(QObject, Future):
             else:
                 raise TimeoutError()
 
-    def add_done_callback(self, fn: Callable[["PythonicQFuture"], Any]) -> None:
+    def add_done_callback(self, fn: Callable[["QtFuture"], Any]) -> None:
         with self._cond:
             if self._state not in [
                 FutureStatus.CANCELLED,
@@ -242,17 +251,17 @@ class PythonicQFuture(QObject, Future):
             self._finished.emit()
 
 
-class QThreadPoolExecutor(Executor):
+class QtThreadPoolExecutor(Executor):
     def __init__(self, qthread_pool: "QThreadPool" = None):
         self._pool = qthread_pool or QThreadPool.globalInstance()
-        self._shutdown_mutex = PythonicQMutex()
+        self._shutdown_mutex = QtLock()
         self._is_shutdown = False
 
-    def submit(self, fn, *args, **kwargs) -> PythonicQFuture:
+    def submit(self, fn, *args, **kwargs) -> QtFuture:
         with self._shutdown_mutex:
             if self._is_shutdown:
                 raise RuntimeError
-            future = PythonicQFuture(parent=self._pool)
+            future = QtFuture(parent=self._pool)
             runnable = _QRunnable(future, fn, args, kwargs)
             log.debug("Submitting to QThreadPoolExecutor: %s(%s, %s)", fn, args, kwargs)
             self._pool.start(runnable)

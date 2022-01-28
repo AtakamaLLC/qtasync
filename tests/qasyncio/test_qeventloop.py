@@ -9,8 +9,8 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
 import subprocess
 
-from QtPy.qasyncio import QEventLoop
-from QtPy.qconcurrent.futures import QThreadPoolExecutor
+from QtPy.qasyncio import QtEventLoop
+from QtPy.qconcurrent._futures import QtThreadPoolExecutor
 
 import pytest
 
@@ -19,8 +19,8 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture
-def loop(request, application) -> "QEventLoop":
-    lp = QEventLoop()
+def loop(request, application) -> "QtEventLoop":
+    lp = QtEventLoop()
     asyncio.set_event_loop(lp)
 
     additional_exceptions = []
@@ -60,7 +60,7 @@ def loop(request, application) -> "QEventLoop":
     lp.close()
 
 
-def fail_on_timeout(evt_loop: "QEventLoop", timeout=5):
+def fail_on_timeout(evt_loop: "QtEventLoop", timeout=5):
     def _fail(_loop=evt_loop, _timeout=timeout):
         _loop.stop()
         _loop.set_exception_handler(None)
@@ -70,7 +70,7 @@ def fail_on_timeout(evt_loop: "QEventLoop", timeout=5):
 
 
 @pytest.fixture(
-    params=[None, QThreadPoolExecutor, ThreadPoolExecutor, ProcessPoolExecutor],
+    params=[None, QtThreadPoolExecutor, ThreadPoolExecutor, ProcessPoolExecutor],
 )
 def executor(request):
     exc_cls = request.param
@@ -233,8 +233,8 @@ def test_loop_not_running(loop):
 
 def test_can_function_as_context_manager(application):
     """Verify that a QEventLoop can function as its own context manager."""
-    with QEventLoop() as loop:
-        assert isinstance(loop, QEventLoop)
+    with QtEventLoop() as loop:
+        assert isinstance(loop, QtEventLoop)
         loop.call_soon(loop.stop)
         loop.run_forever()
 
@@ -736,7 +736,7 @@ def test_scheduling(loop, sock_pair):
     "sys.version_info < (3,4)",
     reason="Doesn't work on python older than 3.4",
 )
-def test_exception_handler(loop: "QEventLoop"):
+def test_exception_handler(loop: "QtEventLoop"):
     fail_on_timeout(loop, timeout=180)
     handler_called = False
     coro_run = False

@@ -1,3 +1,13 @@
-from QtPy.qasyncio.env import QEventLoop
+from QtPy.qasyncio._env import QtEventLoop
 
-__all__ = ["QEventLoop"]
+try:
+    from QtPy.qasyncio._env import QtProactorEventLoop
+except ImportError:
+    QtProactorEventLoop = None
+
+try:
+    from QtPy.qasyncio._env import QtSelectorEventLoop
+except ImportError:
+    QtSelectorEventLoop = None
+
+__all__ = ["QtEventLoop", "QtProactorEventLoop", "QtSelectorEventLoop"]

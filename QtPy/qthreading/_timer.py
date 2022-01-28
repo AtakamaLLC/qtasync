@@ -1,15 +1,15 @@
 from typing import TYPE_CHECKING, Callable, Any
 
-from QtPy.env import QTimer
-from QtPy.util import qt_timeout
+from QtPy._env import QTimer
+from QtPy._util import qt_timeout
 from QtPy.types.unbound import SIGNAL_TYPE
 from QtPy.types.bound import PYTHON_TIME
 
 if TYPE_CHECKING:
-    from QtPy.env import QObject
+    from QtPy._env import QObject
 
 
-class PythonicQTimer(QTimer):
+class QtTimer(QTimer):
     timeout: SIGNAL_TYPE
 
     def cancel(self):
@@ -18,7 +18,7 @@ class PythonicQTimer(QTimer):
     @classmethod
     def singleShot(
         cls, duration: PYTHON_TIME, func: Callable[[], Any], parent: "QObject" = None
-    ) -> "PythonicQTimer":
+    ) -> "QtTimer":
         t = cls(parent=parent)
         t.setSingleShot(True)
         t.setInterval(qt_timeout(duration))

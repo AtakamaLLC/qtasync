@@ -1,18 +1,20 @@
-from .timer import PythonicQTimer
-from .locks import (
-    PythonicQMutex,
-    PythonicQWaitCondition,
-    QThreadEvent,
-    PythonicQSemaphore,
+from ._timer import QtTimer
+from ._locks import (
+    QtLock,
+    QtRLock,
+    QtCondition,
+    QtEvent,
+    QtSemaphore,
 )
-from .thread import PythonicQThread
+from ._thread import QtThread
 
 
 __all__ = [
-    "PythonicQTimer",
-    "PythonicQMutex",
-    "PythonicQWaitCondition",
-    "QThreadEvent",
-    "PythonicQThread",
-    "PythonicQSemaphore",
+    "QtTimer",
+    "QtLock",
+    "QtRLock",
+    "QtCondition",
+    "QtEvent",
+    "QtThread",
+    "QtSemaphore",
 ]

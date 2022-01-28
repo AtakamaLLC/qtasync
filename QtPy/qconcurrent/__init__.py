@@ -1,3 +1,3 @@
-from .futures import PythonicQFuture, QThreadPoolExecutor
+from ._futures import QtFuture, QtThreadPoolExecutor
 
-__all__ = ["PythonicQFuture", "QThreadPoolExecutor"]
+__all__ = ["QtFuture", "QtThreadPoolExecutor"]

@@ -6,33 +6,35 @@ from unittest.mock import patch
 import pytest
 
 from QtPy import set_timeout_compatibility_mode
-from QtPy.env import QThread
+from QtPy._env import QThread
 from QtPy.qthreading import (
-    PythonicQMutex,
-    PythonicQWaitCondition,
-    QThreadEvent,
-    PythonicQThread,
-    PythonicQSemaphore,
+    QtLock,
+    QtRLock,
+    QtCondition,
+    QtEvent,
+    QtThread,
+    QtSemaphore,
 )
+
 
 log = logging.getLogger(__name__)
 
-MUTEX = Union["Lock", "RLock", "PythonicQMutex"]
-THREAD_EVT = Union["Event", "QThreadEvent"]
-CONDITION = Union["Condition", "PythonicQWaitCondition"]
-THREAD_CLS = Union[Type["Thread"], Type["PythonicQThread"]]
-SEMAPHORE = Union["Semaphore", "PythonicQSemaphore"]
+MUTEX = Union[Lock, RLock, QtLock, QtRLock]
+THREAD_EVT = Union[Event, QtEvent]
+CONDITION = Union[Condition, QtCondition]
+THREAD_CLS = Union[Type[Thread], Type[QtThread]]
+SEMAPHORE = Union[Semaphore, QtSemaphore]
 
 
-@pytest.fixture(params=[Thread, PythonicQThread])
+@pytest.fixture(params=[Thread, QtThread])
 def thread_cls(request):
     thread_cls: THREAD_CLS = request.param
     yield thread_cls
 
 
-@pytest.fixture(params=[Event, QThreadEvent])
+@pytest.fixture(params=[Event, QtEvent])
 def thread_event(request):
-    evt_cls: Union[Type["Event"], Type["QThreadEvent"]] = request.param
+    evt_cls: Union[Type["Event"], Type["QtEvent"]] = request.param
     evt = evt_cls()
     yield evt
 
@@ -41,7 +43,7 @@ def get_mutex(thread_type, recursive: bool = False) -> Type[MUTEX]:
     if issubclass(thread_type, Thread):
         return RLock if recursive else Lock
     elif issubclass(thread_type, QThread):
-        return PythonicQMutex
+        return QtRLock if recursive else QtLock
     else:
         raise RuntimeError("Unexpected thread type %s", thread_type)
 
@@ -50,7 +52,7 @@ def get_thread_event(thread_type) -> Type[THREAD_EVT]:
     if issubclass(thread_type, Thread):
         return Event
     elif issubclass(thread_type, QThread):
-        return QThreadEvent
+        return QtEvent
     else:
         raise RuntimeError("Unexpected thread type %s", thread_type)
 
@@ -59,7 +61,7 @@ def get_condition(thread_type) -> Type[CONDITION]:
     if issubclass(thread_type, Thread):
         return Condition
     elif issubclass(thread_type, QThread):
-        return PythonicQWaitCondition
+        return QtCondition
     else:
         raise RuntimeError("Unexpected thread type %s", thread_type)
 
@@ -68,7 +70,7 @@ def get_semaphore(thread_type) -> Type[SEMAPHORE]:
     if issubclass(thread_type, Thread):
         return Semaphore
     elif issubclass(thread_type, QThread):
-        return PythonicQSemaphore
+        return QtSemaphore
     else:
         raise RuntimeError("Unexpected thread type %s", thread_type)
 
@@ -149,7 +151,7 @@ def test_semaphore(thread_cls: THREAD_CLS):
 def test_mutex_with_time_conversion():
     set_timeout_compatibility_mode(True)
     try:
-        mutex = PythonicQMutex()
+        mutex = QtLock()
 
         with patch.object(mutex, "_mutex") as qt_mutex:
             # Float is python timeout duration in seconds, converted to milliseconds

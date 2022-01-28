@@ -5,11 +5,11 @@ import itertools
 import time
 from typing import Callable
 
-from QtPy.env import QCoreApplication, QSocketNotifier, QObject
-from QtPy.qconcurrent.futures import QThreadPoolExecutor
+from QtPy._env import QCoreApplication, QSocketNotifier, QObject
+from QtPy.qconcurrent._futures import QtThreadPoolExecutor
 from QtPy.types.unbound import SIGNAL_TYPE
 from QtPy.types.bound import PYTHON_TIME
-from QtPy.qasyncio.util import _SimpleTimer, _make_signaller, _fileno
+from QtPy.qasyncio._util import _SimpleTimer, _make_signaller, _fileno
 
 log = logging.getLogger(__name__)
 
@@ -319,7 +319,7 @@ class _QEventLoop(asyncio.BaseEventLoop):
 
         if executor is None:
             self.__log_debug("Creating default executor")
-            executor = self.__default_executor = QThreadPoolExecutor()
+            executor = self.__default_executor = QtThreadPoolExecutor()
 
         return asyncio.wrap_future(executor.submit(callback, *args))
 

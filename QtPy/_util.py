@@ -2,7 +2,7 @@ import logging
 from typing import Union, Optional, Dict
 
 from QtPy import get_timeout_compatibility_mode
-from QtPy.env import QDeadlineTimer, QtCore
+from QtPy._env import QDeadlineTimer, QtCore
 
 from .types.bound import QT_TIME, PYTHON_TIME
 from .types.unbound import MESSAGE_HANDLER_TYPE

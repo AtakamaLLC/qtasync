@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from QtPy.env import (
+from QtPy._env import (
     QSemaphore,
     QMutex,
     QRecursiveMutex,
@@ -13,13 +13,19 @@ from QtPy.env import (
 )
 
 from QtPy.types.bound import QT_TIME, PYTHON_TIME
-from QtPy.util import qt_timeout, mk_q_deadline_timer
+from QtPy._util import qt_timeout, mk_q_deadline_timer
 
 log = logging.getLogger(__name__)
 
 
-class PythonicQMutex:
+class _QtLock:
     def __init__(self, default_timeout: PYTHON_TIME = -1, recursive: bool = False):
+        """
+        :param default_timeout: A divergence from Python's Lock/RLock, this parameter can
+            be used to set a timeout used by the mutex when acquired in a `with` block (or
+            if you explicitly call __enter__())
+        :param recursive: Whether or not the mutex can be re-acquired by the same thread
+        """
         if QtModuleName in (PYQT6_MODULE_NAME, PYSIDE6_MODULE_NAME):
             self._mutex = QRecursiveMutex() if recursive else QMutex()
         else:
@@ -57,23 +63,20 @@ class PythonicQMutex:
     def is_recursive(self) -> bool:
         return self._mutex.isRecursive()
 
-    # Qt methods, pass-through to underlying mutex
-    # def lock(self):
-    #     return self._mutex.lock()
-    #
-    # def unlock(self):
-    #     return self._mutex.unlock()
-    #
-    # def tryLock(self, timeout: QT_TIME = 0) -> bool:
-    #     return self._mutex.tryLock(timeout)
-    #
-    # def try_lock(self) -> bool:
-    #     return self._mutex.try_lock()
+
+class QtRLock(_QtLock):
+    def __init__(self, default_timeout: PYTHON_TIME = -1):
+        super().__init__(default_timeout=default_timeout, recursive=True)
 
 
-class PythonicQWaitCondition:
+class QtLock(_QtLock):
+    def __init__(self, default_timeout: PYTHON_TIME = -1):
+        super().__init__(default_timeout=default_timeout, recursive=False)
+
+
+class QtCondition:
     def __init__(self):
-        self._mutex = PythonicQMutex()
+        self._mutex = QtLock()
         self._cond = QWaitCondition()
 
     # Python methods to match threading.Condition
@@ -106,11 +109,11 @@ class PythonicQWaitCondition:
         self._cond.wakeOne()
 
 
-class QThreadEvent:
+class QtEvent:
     def __init__(self):
         self._is_set = False
-        self._flag_mutex = PythonicQMutex()
-        self._cond = PythonicQWaitCondition()
+        self._flag_mutex = QtLock()
+        self._cond = QtCondition()
 
     def is_set(self) -> bool:
         with self._flag_mutex:
@@ -142,7 +145,7 @@ class QThreadEvent:
             return self._cond.wait(timeout)
 
 
-class PythonicQSemaphore(QSemaphore):
+class QtSemaphore(QSemaphore):
     def __init__(self, value=1):
         super().__init__(n=value)
 
