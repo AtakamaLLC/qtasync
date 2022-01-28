@@ -8,8 +8,6 @@ from QtPy._env import QObject, QApplication, QtModuleName, PYQT6_MODULE_NAME, QE
 from QtPy.types.unbound import MESSAGE_HANDLER_TYPE, SIGNAL_TYPE
 from QtPy._util import install_custom_qt_message_handler
 
-from .enums import FailureCodes
-
 if TYPE_CHECKING:
     from QtPy._env import QtCore
     from tests.conftest import QtTestContext

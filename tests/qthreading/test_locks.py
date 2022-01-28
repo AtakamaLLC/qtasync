@@ -19,11 +19,11 @@ from QtPy.qthreading import (
 
 log = logging.getLogger(__name__)
 
-MUTEX = Union["Lock", "RLock", "PythonicQMutex"]
-THREAD_EVT = Union["Event", "QThreadEvent"]
-CONDITION = Union["Condition", "PythonicQWaitCondition"]
-THREAD_CLS = Union[Type["Thread"], Type["PythonicQThread"]]
-SEMAPHORE = Union["Semaphore", "PythonicQSemaphore"]
+MUTEX = Union[Lock, RLock, QtLock, QtRLock]
+THREAD_EVT = Union[Event, QtEvent]
+CONDITION = Union[Condition, QtCondition]
+THREAD_CLS = Union[Type[Thread], Type[QtThread]]
+SEMAPHORE = Union[Semaphore, QtSemaphore]
 
 
 @pytest.fixture(params=[Thread, QtThread])
