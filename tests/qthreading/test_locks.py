@@ -94,6 +94,13 @@ def test_condition_single_thread(thread_cls: THREAD_CLS):
         condition.release()
 
 
+def test_condition_double_acquire(thread_cls: THREAD_CLS):
+    lock = get_mutex(thread_cls, False)()
+    condition = get_condition(thread_cls)(lock=lock)
+    with condition:
+        assert not condition.acquire(blocking=False)
+
+
 def test_condition_multiple_threads(thread_cls: THREAD_CLS):
     condition = get_condition(thread_cls)()
     semaphore = get_semaphore(thread_cls)(value=0)
