@@ -90,6 +90,9 @@ def test_condition_single_thread(thread_cls: THREAD_CLS):
     with pytest.raises(RuntimeError):
         condition.wait(timeout=0.1)
 
+    with pytest.raises(RuntimeError):
+        condition.release()
+
 
 def test_condition_multiple_threads(thread_cls: THREAD_CLS):
     condition = get_condition(thread_cls)()

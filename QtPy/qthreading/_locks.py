@@ -93,14 +93,13 @@ class QtCondition:
         self._mutex.acquire()
 
     def release(self):
+        self._ensure_mutex_locked()
         self._mutex.release()
 
     def wait(self, timeout: PYTHON_TIME = None) -> bool:
         # Since the underlying mutex is not recursive, we can ensure that the mutex is locked by simply attempting to
         # lock it without blocking
-        if self._mutex.acquire(blocking=False):
-            self._mutex.release()
-            raise RuntimeError("Must acquire QtCondition before calling wait")
+        self._ensure_mutex_locked()
 
         if timeout is None:
             return self._cond.wait(self._mutex._mutex)
@@ -116,6 +115,11 @@ class QtCondition:
 
     def notify(self):
         self._cond.wakeOne()
+
+    def _ensure_mutex_locked(self):
+        if self._mutex.acquire(blocking=False):
+            self._mutex.release()
+            raise RuntimeError("Must acquire QtCondition before calling wait or release")
 
 
 class QtEvent:
