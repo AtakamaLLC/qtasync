@@ -47,7 +47,10 @@ class _QtLock:
         else:
             if timeout != -1.0:
                 raise ValueError("Cannot specify a timeout for a non-blocking call")
-            return self._mutex.try_lock()
+            if QtModuleName in (PYQT5_MODULE_NAME, PYQT6_MODULE_NAME):
+                return self._mutex.tryLock()
+            else:
+                return self._mutex.try_lock()
 
     def release(self):
         self._mutex.unlock()

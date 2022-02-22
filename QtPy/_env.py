@@ -8,8 +8,8 @@ from QtPy.types.unbound import SIGNAL_TYPE
 
 if TYPE_CHECKING:
     # For static type checking, feel free to set the Qt library of your choice here
-    from PyQt6 import QtCore as _TypedQtCore
-    from PyQt6 import QtWidgets as _TypedQtWidgets
+    from PyQt5 import QtCore as _TypedQtCore
+    from PyQt5 import QtWidgets as _TypedQtWidgets
 
 
 _log = logging.getLogger(__name__)
