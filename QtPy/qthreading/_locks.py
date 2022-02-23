@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 
 def _get_ident() -> int:
     import threading
+
     try:
         return threading.get_native_id()
     except:
@@ -138,7 +139,8 @@ class QtLock(_QtLock):
         super().__init__(default_timeout=default_timeout, recursive=False)
 
     def _acquire_restore(self, _state):
-        self.acquire()
+        # self.acquire()
+        pass
 
     def _release_save(self):
         # self.release()
@@ -154,7 +156,13 @@ class QtLock(_QtLock):
 
 class QtCondition:
     def __init__(self, lock: Union["QtLock", "QtRLock"] = None):
-        self._mutex = lock or QtRLock()
+        self._mutex = lock or QtLock()
+        # Cannot use a recursive mutex in Qt 5
+        # See: https://github.com/qt/qtbase/blob/5.15.2/src/corelib/thread/qwaitcondition_unix.cpp#L217
+        #  and https://github.com/qt/qtbase/blob/5.15.2/src/corelib/thread/qwaitcondition_win.cpp#L171
+        # TODO: If using Qt 6, allow recursive mutexes as long as the mutex is not recursively locked
+        #   see: https://github.com/qt/qtbase/blob/6.3/src/corelib/thread/qwaitcondition_win.cpp#L189
+        assert not isinstance(self._mutex, QtRLock)
         self._cond = QWaitCondition()
 
     # Python methods to match threading.Condition
@@ -168,6 +176,8 @@ class QtCondition:
         return self._mutex.acquire(blocking=blocking, timeout=timeout)
 
     def release(self):
+        if not self._mutex._is_owned():
+            raise RuntimeError("Cannot release un-acquired lock")
         self._mutex.release()
 
     def wait(self, timeout: PYTHON_TIME = None) -> bool:
@@ -176,17 +186,22 @@ class QtCondition:
         if not self._mutex._is_owned():
             raise RuntimeError("Cannot wait on un-acquired lock")
 
+        state = self._mutex._release_save()
         try:
             if timeout is None:
                 return self._cond.wait(self._mutex._mutex)
             else:
                 if QtModuleName == PYQT5_MODULE_NAME:
                     # For some reason, the QDeadlineTimer does not work with PyQt5 and wait() instantly returns
-                    return self._cond.wait(self._mutex._mutex, msecs=qt_timeout(timeout))
+                    return self._cond.wait(
+                        self._mutex._mutex, msecs=qt_timeout(timeout)
+                    )
                 else:
-                    return self._cond.wait(self._mutex._mutex, mk_q_deadline_timer(timeout))
+                    return self._cond.wait(
+                        self._mutex._mutex, mk_q_deadline_timer(timeout)
+                    )
         finally:
-            self._mutex._acquire_restore()
+            self._mutex._acquire_restore(state)
 
     def notify_all(self):
         if not self._mutex._is_owned():
