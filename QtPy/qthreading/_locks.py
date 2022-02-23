@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union, Tuple
+from typing import Optional, Union, Tuple, Callable, Any
 
 from QtPy._env import (
     QSemaphore,
@@ -10,10 +10,11 @@ from QtPy._env import (
     PYQT5_MODULE_NAME,
     PYQT6_MODULE_NAME,
     PYSIDE6_MODULE_NAME,
+    QElapsedTimer,
 )
 
 from QtPy.types.bound import QT_TIME, PYTHON_TIME
-from QtPy._util import qt_timeout, mk_q_deadline_timer
+from QtPy._util import qt_timeout, mk_q_deadline_timer, py_timeout
 
 log = logging.getLogger(__name__)
 
@@ -202,6 +203,27 @@ class QtCondition:
                     )
         finally:
             self._mutex._acquire_restore(state)
+
+    def wait_for(self, predicate: Callable[[], Any], timeout: PYTHON_TIME = None):
+        """
+        Largely a copy of threading.Condition.wait_for()
+        """
+        timer = None
+        waittime = qt_timeout(timeout)
+        result = predicate()
+        while not result:
+            if waittime is not None:
+                if timer is None:
+                    timer = QElapsedTimer()
+                    timer.start()
+                else:
+                    # New waittime is remaining wait time minus the time elapsed since the timer was last (re)started
+                    waittime -= timer.restart()
+                    if waittime <= 0:
+                        break
+            self.wait(py_timeout(waittime))
+            result = predicate()
+        return result
 
     def notify_all(self):
         if not self._mutex._is_owned():

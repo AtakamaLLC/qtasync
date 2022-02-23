@@ -101,6 +101,27 @@ def test_condition_double_acquire(thread_cls: THREAD_CLS):
         assert not condition.acquire(blocking=False)
 
 
+def test_condition_wait_for(thread_cls: THREAD_CLS):
+    cond = get_condition(thread_cls)()
+    evt = get_thread_event(thread_cls)()
+    some_arr = []
+
+    def fn():
+        nonlocal some_arr
+        assert evt.wait(timeout=1.0)
+        some_arr.append("val")
+
+    t = thread_cls(target=fn)
+    t.start()
+
+    with cond:
+        evt.set()
+        assert cond.wait_for(lambda: len(some_arr) > 0, timeout=1.0)
+
+    t.join(1.0)
+    assert not t.is_alive()
+
+
 def test_condition_multiple_threads(thread_cls: THREAD_CLS):
     condition = get_condition(thread_cls)()
     semaphore = get_semaphore(thread_cls)(value=0)

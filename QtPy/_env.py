@@ -116,6 +116,7 @@ QEvent: Type["_TypedQtCore.QEvent"] = _QtCore.QEvent
 QDeadlineTimer: Type["_TypedQtCore.QDeadlineTimer"] = _QtCore.QDeadlineTimer
 QTimerEvent: Type["_TypedQtCore.QTimerEvent"] = _QtCore.QTimerEvent
 QTime: Type["_TypedQtCore.QTime"] = _QtCore.QTime
+QElapsedTimer: Type["_TypedQtCore.QElapsedTimer"] = _QtCore.QElapsedTimer
 QtDebugMsg: Type["_TypedQtCore.QtMsgType.QtDebugMsg"] = _QtCore.QtMsgType.QtDebugMsg
 QtInfoMsg: Type["_TypedQtCore.QtMsgType.QtInfoMsg"] = _QtCore.QtMsgType.QtInfoMsg
 QtWarningMsg: Type[
