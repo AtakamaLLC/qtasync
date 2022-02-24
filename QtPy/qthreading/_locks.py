@@ -1,5 +1,5 @@
 import logging
-from typing import Optional, Union, Tuple, Callable, Any
+from typing import Optional, Union, Callable, Any
 
 from QtPy._env import (
     QSemaphore,
@@ -82,12 +82,6 @@ class _QtLock:
         else:
             return self._mutex.tryLock(timeout)
 
-    def _acquire_restore(self, _state):
-        raise NotImplementedError
-
-    def _release_save(self):
-        raise NotImplementedError
-
     def _is_owned(self) -> bool:
         raise NotImplementedError
 
@@ -117,19 +111,8 @@ class QtRLock(_QtLock):
             self._owner = None
             super().release()
 
-    def _acquire_restore(self, state: Tuple[int, int]):
-        self.acquire()
-        self._count, self._owner = state
-
-    def _release_save(self) -> Tuple[int, int]:
-        if self._count == 0:
-            raise RuntimeError("Cannot release un-acquired QtRLock")
-        count = self._count
-        self._count = 0
-        owner = self._owner
-        self._owner = None
-        # self.release()
-        return count, owner
+    def _recursion_count(self) -> int:
+        return self._count
 
     def _is_owned(self) -> bool:
         return _get_ident() == self._owner
@@ -138,14 +121,6 @@ class QtRLock(_QtLock):
 class QtLock(_QtLock):
     def __init__(self, default_timeout: PYTHON_TIME = -1):
         super().__init__(default_timeout=default_timeout, recursive=False)
-
-    def _acquire_restore(self, _state):
-        # self.acquire()
-        pass
-
-    def _release_save(self):
-        # self.release()
-        pass
 
     def _is_owned(self):
         if self.acquire(blocking=False):
@@ -187,22 +162,14 @@ class QtCondition:
         if not self._mutex._is_owned():
             raise RuntimeError("Cannot wait on un-acquired lock")
 
-        state = self._mutex._release_save()
-        try:
-            if timeout is None:
-                return self._cond.wait(self._mutex._mutex)
+        if timeout is None:
+            return self._cond.wait(self._mutex._mutex)
+        else:
+            if QtModuleName == PYQT5_MODULE_NAME:
+                # For some reason, the QDeadlineTimer does not work with PyQt5 and wait() instantly returns
+                return self._cond.wait(self._mutex._mutex, msecs=qt_timeout(timeout))
             else:
-                if QtModuleName == PYQT5_MODULE_NAME:
-                    # For some reason, the QDeadlineTimer does not work with PyQt5 and wait() instantly returns
-                    return self._cond.wait(
-                        self._mutex._mutex, msecs=qt_timeout(timeout)
-                    )
-                else:
-                    return self._cond.wait(
-                        self._mutex._mutex, mk_q_deadline_timer(timeout)
-                    )
-        finally:
-            self._mutex._acquire_restore(state)
+                return self._cond.wait(self._mutex._mutex, mk_q_deadline_timer(timeout))
 
     def wait_for(self, predicate: Callable[[], Any], timeout: PYTHON_TIME = None):
         """

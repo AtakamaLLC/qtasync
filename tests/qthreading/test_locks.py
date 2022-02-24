@@ -75,6 +75,33 @@ def get_semaphore(thread_type) -> Type[SEMAPHORE]:
         raise RuntimeError("Unexpected thread type %s", thread_type)
 
 
+def test_qt_lock():
+    lock = QtLock()
+    assert not lock._is_owned()
+    lock.acquire()
+    assert lock._is_owned()
+    lock.release()
+    assert not lock._is_owned()
+
+
+def test_qt_recursive_lock():
+    lock = QtRLock()
+    assert not lock._is_owned()
+    assert lock._recursion_count() == 0
+    lock.acquire(blocking=False)
+    assert lock._is_owned()
+    assert lock._recursion_count() == 1
+    lock.acquire(blocking=False)
+    assert lock._is_owned()
+    assert lock._recursion_count() == 2
+    lock.release()
+    assert lock._is_owned()
+    assert lock._recursion_count() == 1
+    lock.release()
+    assert not lock._is_owned()
+    assert lock._recursion_count() == 0
+
+
 def test_thread_event_set(thread_cls: THREAD_CLS):
     thread_event = get_thread_event(thread_cls)()
     assert not thread_event.is_set()
