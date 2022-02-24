@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Optional, Union, Callable, Any
 
 from QtPy._env import (
     QSemaphore,
@@ -10,12 +10,22 @@ from QtPy._env import (
     PYQT5_MODULE_NAME,
     PYQT6_MODULE_NAME,
     PYSIDE6_MODULE_NAME,
+    QElapsedTimer,
 )
 
 from QtPy.types.bound import QT_TIME, PYTHON_TIME
-from QtPy._util import qt_timeout, mk_q_deadline_timer
+from QtPy._util import qt_timeout, mk_q_deadline_timer, py_timeout
 
 log = logging.getLogger(__name__)
+
+
+def _get_ident() -> int:
+    import threading
+
+    try:
+        return threading.get_native_id()
+    except:  # noqa
+        return threading.get_ident()
 
 
 class _QtLock:
@@ -34,23 +44,20 @@ class _QtLock:
 
     # Python methods to match threading.Lock/RLock's interface
     def __enter__(self):
-        if not self._mutex.tryLock(self._default_timeout):
+        if not self._try_lock(timeout=self._default_timeout):
             raise TimeoutError("QMutex timed out")
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self._mutex.unlock()
+        self.release()
 
     def acquire(self, blocking=True, timeout: PYTHON_TIME = -1.0):
         if blocking:
             # Negative timeout in a QMutex behaves the same as a Python lock
-            return self._mutex.tryLock(qt_timeout(timeout))
+            return self._try_lock(timeout=qt_timeout(timeout))
         else:
             if timeout != -1.0:
                 raise ValueError("Cannot specify a timeout for a non-blocking call")
-            if QtModuleName in (PYQT5_MODULE_NAME, PYQT6_MODULE_NAME):
-                return self._mutex.tryLock()
-            else:
-                return self._mutex.try_lock()
+            return self._try_lock()
 
     def release(self):
         self._mutex.unlock()
@@ -66,20 +73,72 @@ class _QtLock:
     def is_recursive(self) -> bool:
         return self._mutex.isRecursive()
 
+    def _try_lock(self, timeout: QT_TIME = None) -> bool:
+        if timeout is None:
+            if QtModuleName in (PYQT5_MODULE_NAME, PYQT6_MODULE_NAME):
+                return self._mutex.tryLock()
+            else:
+                return self._mutex.try_lock()
+        else:
+            return self._mutex.tryLock(timeout)
+
+    def _is_owned(self) -> bool:
+        raise NotImplementedError
+
 
 class QtRLock(_QtLock):
     def __init__(self, default_timeout: PYTHON_TIME = -1):
         super().__init__(default_timeout=default_timeout, recursive=True)
+        self._owner = None
+        self._count = 0
+
+    def _try_lock(self, timeout: QT_TIME = None) -> bool:
+        me = _get_ident()
+        if self._owner == me:
+            self._count += 1
+            return True
+        ret = super()._try_lock(timeout=timeout)
+        if ret:
+            self._owner = me
+            self._count = 1
+        return ret
+
+    def release(self):
+        if self._owner != _get_ident():
+            raise RuntimeError("Cannot release un-acquired QtRLock")
+        self._count -= 1
+        if self._count == 0:
+            self._owner = None
+            super().release()
+
+    def _recursion_count(self) -> int:
+        return self._count
+
+    def _is_owned(self) -> bool:
+        return _get_ident() == self._owner
 
 
 class QtLock(_QtLock):
     def __init__(self, default_timeout: PYTHON_TIME = -1):
         super().__init__(default_timeout=default_timeout, recursive=False)
 
+    def _is_owned(self):
+        if self.acquire(blocking=False):
+            self.release()
+            return False
+        else:
+            return True
+
 
 class QtCondition:
-    def __init__(self):
-        self._mutex = QtLock()
+    def __init__(self, lock: Union["QtLock", "QtRLock"] = None):
+        self._mutex = lock or QtLock()
+        # Cannot use a recursive mutex in Qt 5
+        # See: https://github.com/qt/qtbase/blob/5.15.2/src/corelib/thread/qwaitcondition_unix.cpp#L217
+        #  and https://github.com/qt/qtbase/blob/5.15.2/src/corelib/thread/qwaitcondition_win.cpp#L171
+        # TODO: If using Qt 6, allow recursive mutexes as long as the mutex is not recursively locked
+        #   see: https://github.com/qt/qtbase/blob/6.3/src/corelib/thread/qwaitcondition_win.cpp#L189
+        assert not isinstance(self._mutex, QtRLock)
         self._cond = QWaitCondition()
 
     # Python methods to match threading.Condition
@@ -89,17 +148,19 @@ class QtCondition:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.release()
 
-    def acquire(self):
-        self._mutex.acquire()
+    def acquire(self, blocking=True, timeout: PYTHON_TIME = -1.0):
+        return self._mutex.acquire(blocking=blocking, timeout=timeout)
 
     def release(self):
-        self._ensure_mutex_locked()
+        if not self._mutex._is_owned():
+            raise RuntimeError("Cannot release un-acquired lock")
         self._mutex.release()
 
     def wait(self, timeout: PYTHON_TIME = None) -> bool:
         # Since the underlying mutex is not recursive, we can ensure that the mutex is locked by simply attempting to
         # lock it without blocking
-        self._ensure_mutex_locked()
+        if not self._mutex._is_owned():
+            raise RuntimeError("Cannot wait on un-acquired lock")
 
         if timeout is None:
             return self._cond.wait(self._mutex._mutex)
@@ -110,16 +171,36 @@ class QtCondition:
             else:
                 return self._cond.wait(self._mutex._mutex, mk_q_deadline_timer(timeout))
 
+    def wait_for(self, predicate: Callable[[], Any], timeout: PYTHON_TIME = None):
+        """
+        Largely a copy of threading.Condition.wait_for()
+        """
+        timer = None
+        waittime = qt_timeout(timeout)
+        result = predicate()
+        while not result:
+            if waittime is not None:
+                if timer is None:
+                    timer = QElapsedTimer()
+                    timer.start()
+                else:
+                    # New waittime is remaining wait time minus the time elapsed since the timer was last (re)started
+                    waittime -= timer.restart()
+                    if waittime <= 0:
+                        break
+            self.wait(py_timeout(waittime))
+            result = predicate()
+        return result
+
     def notify_all(self):
+        if not self._mutex._is_owned():
+            raise RuntimeError("Cannot notify all on un-acquired lock")
         self._cond.wakeAll()
 
     def notify(self):
+        if not self._mutex._is_owned():
+            raise RuntimeError("Cannot notify on un-acquired lock")
         self._cond.wakeOne()
-
-    def _ensure_mutex_locked(self):
-        if self._mutex.acquire(blocking=False):
-            self._mutex.release()
-            raise RuntimeError("Must acquire QtCondition before calling wait or release")
 
 
 class QtEvent:

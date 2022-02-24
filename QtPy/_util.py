@@ -11,7 +11,9 @@ from .types.unbound import MESSAGE_HANDLER_TYPE
 log = logging.getLogger(__name__)
 
 
-def qt_timeout(time_secs: Union[float, PYTHON_TIME]) -> QT_TIME:
+def qt_timeout(time_secs: Union[float, PYTHON_TIME, None]) -> Optional[QT_TIME]:
+    if time_secs is None:
+        return None
     if get_timeout_compatibility_mode() and isinstance(time_secs, int):
         # If timeout compatibility mode is set, then integer timeouts are treated like Qt timeouts–durations measured
         # in milliseconds–and if it is a float then it is treated like a python time duration (seconds as a float)
@@ -20,7 +22,9 @@ def qt_timeout(time_secs: Union[float, PYTHON_TIME]) -> QT_TIME:
         return QT_TIME(time_secs * 1000)
 
 
-def py_timeout(time_msecs: Union[int, QT_TIME]) -> PYTHON_TIME:
+def py_timeout(time_msecs: Union[int, QT_TIME, None]) -> Optional[PYTHON_TIME]:
+    if time_msecs is None:
+        return None
     return PYTHON_TIME(time_msecs / 1000.0)
 
 
