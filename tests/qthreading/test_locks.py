@@ -120,7 +120,17 @@ def test_condition_wait_for(thread_cls: THREAD_CLS):
 
     t.join(1.0)
     assert not t.is_alive()
-    evt.clear()
+
+
+def test_condition_wait_for_timeout_none(thread_cls: THREAD_CLS):
+    cond = get_condition(thread_cls)()
+    evt = get_thread_event(thread_cls)()
+    some_arr = []
+
+    def fn():
+        nonlocal some_arr
+        assert evt.wait(timeout=1.0)
+        some_arr.append("val")
 
     t = thread_cls(target=fn)
     t.start()
