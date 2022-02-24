@@ -24,7 +24,7 @@ def _get_ident() -> int:
 
     try:
         return threading.get_native_id()
-    except:
+    except:  # noqa
         return threading.get_ident()
 
 

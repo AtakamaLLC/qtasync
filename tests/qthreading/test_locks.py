@@ -1,5 +1,5 @@
 import logging
-from typing import Type, Union
+from typing import Type, Union, Callable, Any, Optional
 from threading import Condition, Event, Thread, Semaphore, Lock, RLock
 from unittest.mock import patch
 
@@ -109,7 +109,9 @@ def test_condition_wait_for(thread_cls: THREAD_CLS):
     def fn():
         nonlocal some_arr
         assert evt.wait(timeout=1.0)
-        some_arr.append("val")
+        with cond:
+            some_arr.append("val")
+            cond.notify_all()
 
     t = thread_cls(target=fn)
     t.start()
@@ -130,7 +132,9 @@ def test_condition_wait_for_timeout_none(thread_cls: THREAD_CLS):
     def fn():
         nonlocal some_arr
         assert evt.wait(timeout=1.0)
-        some_arr.append("val")
+        with cond:
+            some_arr.append("val")
+            cond.notify_all()
 
     t = thread_cls(target=fn)
     t.start()
@@ -140,6 +144,92 @@ def test_condition_wait_for_timeout_none(thread_cls: THREAD_CLS):
 
     t.join(1.0)
     assert not t.is_alive()
+
+
+def test_cond_var():
+    def start_py_thread(func: Callable[[], None]) -> Thread:
+        t = Thread(target=func, daemon=True)
+        t.start()
+        return t
+
+    def stop_py_thread(t: Thread) -> None:
+        t.join(20)
+        assert not t.is_alive()
+
+    # First, check the test is sane and works for normal CVs
+    check_cond_var(Condition(), Event(), start_py_thread, stop_py_thread, 10)
+    check_cond_var(Condition(), Event(), start_py_thread, stop_py_thread)
+
+    def start_qthread(func: Callable[[], None]) -> QtThread:
+        t = QtThread(target=func)
+        t.finished.connect(t.deleteLater)
+        t.start()
+        return t
+
+    def stop_qthread(t: QtThread) -> None:
+        t.wait(20000)
+        assert t.isFinished()
+
+    # Now check that it works for our subclass
+    check_cond_var(QtCondition(), QtEvent(), start_qthread, stop_qthread, 10)
+    check_cond_var(QtCondition(), QtEvent(), start_qthread, stop_qthread)
+
+
+def check_cond_var(
+    cv: Union[Condition, QtCondition],
+    evt: Union[QtEvent, Event],
+    start_thread: Callable[[Callable[[], None]], Any],
+    stop_thread: Callable[[Any], None],
+    cv_wait_timeout: Optional[float] = None,
+) -> None:
+    arr: list[str] = []
+    with pytest.raises(RuntimeError):
+        # Gotta hold the lock if we want to acquire
+        cv.wait(1)
+
+    # Releasing without acquiring isn't allowed
+    with pytest.raises(RuntimeError):
+        cv.release()
+
+    # Can't acquire non-blocking with a timeout
+    with pytest.raises(ValueError):
+        cv.acquire(blocking=False, timeout=1)
+
+    # Timeout expirations handled appropriately
+    with cv:
+        assert not cv.wait(0)
+        assert not cv.wait(0.1)
+
+    # Adapted from the threading.Condition example in the Python docs
+    recvd = None
+
+    def receiver() -> None:
+        nonlocal recvd
+
+        with cv:
+            evt.set()
+            cv.wait_for(lambda: len(arr) > 0, timeout=cv_wait_timeout)
+            recvd = arr.pop(0)
+
+    recv_thread = start_thread(receiver)
+
+    # Don't start the sender until we're confirmed waiting. Event is set()
+    # while the CV lock is held, so we know the sender won't be able to
+    # acquire it til the wait has actually started.
+    evt.wait()
+
+    def sender() -> None:
+        with cv:
+            arr.append("data!")
+            cv.notify_all()
+
+    send_thread = start_thread(sender)
+
+    stop_thread(send_thread)
+    stop_thread(recv_thread)
+
+    assert not arr
+    assert recvd == "data!"
 
 
 def test_condition_multiple_threads(thread_cls: THREAD_CLS):
