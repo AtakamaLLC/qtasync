@@ -120,6 +120,16 @@ def test_condition_wait_for(thread_cls: THREAD_CLS):
 
     t.join(1.0)
     assert not t.is_alive()
+    evt.clear()
+
+    t = thread_cls(target=fn)
+    t.start()
+    with cond:
+        evt.set()
+        assert cond.wait_for(lambda: len(some_arr) > 0, timeout=None)
+
+    t.join(1.0)
+    assert not t.is_alive()
 
 
 def test_condition_multiple_threads(thread_cls: THREAD_CLS):

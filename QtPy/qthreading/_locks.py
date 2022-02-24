@@ -209,7 +209,7 @@ class QtCondition:
         Largely a copy of threading.Condition.wait_for()
         """
         timer = None
-        waittime = qt_timeout(timeout)
+        waittime = qt_timeout(timeout) if timeout is not None else None
         result = predicate()
         while not result:
             if waittime is not None:
