@@ -2,9 +2,9 @@ import logging
 import time
 import pytest
 
-from QtPy._env import QThreadPool, QThread
+from QtAsync._env import QThreadPool, QThread
 
-from QtPy.qconcurrent._futures import (
+from QtAsync.qconcurrent._futures import (
     QtFuture,
     QtThreadPoolExecutor,
     QtLock,

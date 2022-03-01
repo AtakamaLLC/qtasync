@@ -9,8 +9,8 @@ from concurrent.futures import ThreadPoolExecutor, ProcessPoolExecutor
 import socket
 import subprocess
 
-from QtPy.qasyncio import QtEventLoop
-from QtPy.qconcurrent._futures import QtThreadPoolExecutor
+from QtAsync.qasyncio import QtEventLoop
+from QtAsync.qconcurrent._futures import QtThreadPoolExecutor
 
 import pytest
 

@@ -5,9 +5,9 @@ from unittest.mock import patch
 
 import pytest
 
-from QtPy import set_timeout_compatibility_mode
-from QtPy._env import QThread
-from QtPy.qthreading import (
+from QtAsync import set_timeout_compatibility_mode
+from QtAsync._env import QThread
+from QtAsync.qthreading import (
     QtLock,
     QtRLock,
     QtCondition,

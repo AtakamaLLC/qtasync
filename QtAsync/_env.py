@@ -4,7 +4,7 @@ import sys
 import os
 from typing import TYPE_CHECKING, Type, Optional
 
-from QtPy.types.unbound import SIGNAL_TYPE
+from QtAsync.types.unbound import SIGNAL_TYPE
 
 if TYPE_CHECKING:
     # For static type checking, feel free to set the Qt library of your choice here

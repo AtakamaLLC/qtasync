@@ -1,12 +1,12 @@
 from typing import TYPE_CHECKING, Callable, Any
 
-from QtPy._env import QTimer
-from QtPy._util import qt_timeout
-from QtPy.types.unbound import SIGNAL_TYPE
-from QtPy.types.bound import PYTHON_TIME
+from QtAsync._env import QTimer
+from QtAsync._util import qt_timeout
+from QtAsync.types.unbound import SIGNAL_TYPE
+from QtAsync.types.bound import PYTHON_TIME
 
 if TYPE_CHECKING:
-    from QtPy._env import QObject
+    from QtAsync._env import QObject
 
 
 class QtTimer(QTimer):

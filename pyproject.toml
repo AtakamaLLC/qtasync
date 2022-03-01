@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "QtPy"
-version = "0.1.2"
+name = "QtAsync"
+version = "0.2.0"
 description = ""
 authors = ["Brian Cefali <brian@atakama.com>"]
 

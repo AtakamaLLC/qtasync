@@ -5,11 +5,11 @@ import itertools
 import time
 from typing import Callable
 
-from QtPy._env import QCoreApplication, QSocketNotifier, QObject
-from QtPy.qconcurrent._futures import QtThreadPoolExecutor
-from QtPy.types.unbound import SIGNAL_TYPE
-from QtPy.types.bound import PYTHON_TIME
-from QtPy.qasyncio._util import _SimpleTimer, _make_signaller, _fileno
+from QtAsync._env import QCoreApplication, QSocketNotifier, QObject
+from QtAsync.qconcurrent._futures import QtThreadPoolExecutor
+from QtAsync.types.unbound import SIGNAL_TYPE
+from QtAsync.types.bound import PYTHON_TIME
+from QtAsync.qasyncio._util import _SimpleTimer, _make_signaller, _fileno
 
 log = logging.getLogger(__name__)
 

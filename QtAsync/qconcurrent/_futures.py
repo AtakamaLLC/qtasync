@@ -14,16 +14,16 @@ from concurrent.futures._base import (
     FINISHED,
 )
 
-from QtPy._env import (
+from QtAsync._env import (
     QObject,
     Signal,
     QThreadPool,
     QRunnable,
 )
 
-from QtPy.qthreading import QtLock, QtCondition
-from QtPy.types.bound import PYTHON_TIME
-from QtPy.types.unbound import SIGNAL_TYPE
+from QtAsync.qthreading import QtLock, QtCondition
+from QtAsync.types.bound import PYTHON_TIME
+from QtAsync.types.unbound import SIGNAL_TYPE
 
 log = logging.getLogger(__name__)
 
