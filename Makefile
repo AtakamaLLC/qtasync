@@ -10,3 +10,9 @@ lint:
 
 test:
 	bash ./run_tests.sh
+
+publish:
+	rm -rf dist
+	poetry build
+	twine upload dist/*
+
