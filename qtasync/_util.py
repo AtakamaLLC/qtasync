@@ -1,8 +1,8 @@
 import logging
 from typing import Union, Optional, Dict
 
-from QtAsync import get_timeout_compatibility_mode
-from QtAsync._env import QDeadlineTimer, QtCore
+from qtasync import get_timeout_compatibility_mode
+from qtasync._env import QDeadlineTimer, QtCore
 
 from .types.bound import QT_TIME, PYTHON_TIME
 from .types.unbound import MESSAGE_HANDLER_TYPE

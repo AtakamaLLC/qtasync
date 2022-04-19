@@ -1,12 +1,12 @@
-from QtAsync.qasyncio._env import QtEventLoop
+from qtasync.qasyncio._env import QtEventLoop
 
 try:
-    from QtAsync.qasyncio._env import QtProactorEventLoop
+    from qtasync.qasyncio._env import QtProactorEventLoop
 except ImportError:
     QtProactorEventLoop = None
 
 try:
-    from QtAsync.qasyncio._env import QtSelectorEventLoop
+    from qtasync.qasyncio._env import QtSelectorEventLoop
 except ImportError:
     QtSelectorEventLoop = None
 
