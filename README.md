@@ -1,12 +1,20 @@
 # QtAsync
 
 ## Overview
-Add `asyncio` support to applications running a `QCoreApplication` or one of its subprocesses by
-utilizing the `QCoreApplication` event loop as a `asyncio.BaseEventLoop`.
+This project is intended to be a shim to allow Python applications to utilize Qt without needing to rewrite common
+threading or asynchronous logic specifically for the interfaces offered by Qt. Rather, one can write application business 
+logic largely the same as if Qt were not used. This library exports a series of objects that utilize Qt implementations with
+Python semantics and interfaces to make it inoperable with their Python equivalents.
+
+In particular, this library focuses on providing support for concurrency, multi-threading, and event loops. The Python
+libraries that this library intends to support with Qt implementations are [threading](https://docs.python.org/3.9/library/threading.html), [concurrent.futures](https://docs.python.org/3.9/library/concurrent.futures.html), and [asyncio](https://docs.python.org/3.9/library/asyncio.html).
+
+Much of the `qtasync.qasyncio` module was derived from [qasync](https://github.com/CabbageDevelopment/qasync).
+
 
 ## Requirements
 * Supported Python Versions: Python 3.9
-* Supported Qt Libraries: PyQt5, PyQt6, PySide2, PySide6
+* Supported Qt Libraries: [PyQt5](https://pypi.org/project/PyQt5/), [PyQt6](https://pypi.org/project/PyQt6/), [PySide2](https://pypi.org/project/PySide2/), [PySide6](https://pypi.org/project/PySide6/)
 
 ## Installation
 
@@ -71,3 +79,47 @@ the same as the Python equivalent and can be used interchangeably in many cases.
 Additionally, there is a third object, `QtEventLoop`, which will select one of the two above implementations
 depending on the active operating system. If running Windows, use `QtProactorEventLoop`, and if not, use
 `QtSelectorEventLoop`.
+
+### Missing Support?
+The Qt implementations of their respective Python objects may be incomplete. If you need support for additional features
+or behavior, you can either submit a pull request or request the change in this repository's [issue tracker](https://github.com/AtakamaLLC/QtAsync/issues).
+
+
+## Examples
+Take a look at the test suites in the tests folder for detailed use of library components.
+
+In particular, `tests.qthreading.test_locks.py` tests the `qtasync.qthreading` module with both the Python object and
+its QtAsync equivalent, demonstrating the interoperability between the two.
+
+For example:
+```python
+from qtasync.qthreading import (
+    QtLock,
+    QtEvent,
+    QtThread,
+)
+
+def not_thread_safe_fn():
+    # Thread-unsafe logic
+    pass
+
+# QtLock and QtRLock can be used like threading.Lock and threading.RLock, including `with` blocks
+lock = QtLock()
+with lock:
+    not_thread_safe_fn()
+
+# QtEvent, like threading.Event, allows thread synchronization
+evt = QtEvent()
+
+def wait_then_print(idx):
+    evt.wait()
+    print(f"Thread {idx} done")
+
+threads = [QtThread(target=wait_then_print, args=[i]) for i in range(0, 10)]
+for t in threads:
+    t.start()
+
+evt.set()
+for t in threads:
+    t.join(timeout=1)
+```

@@ -1,8 +1,3 @@
-# © 2018 Gerard Marull-Paretas <gerard@teslabs.com>
-# © 2014 Mark Harviston <mark.harviston@gmail.com>
-# © 2014 Arve Knudsen <arve.knudsen@gmail.com>
-# BSD License
-
 """UNIX specific Quamash functionality."""
 
 import asyncio
