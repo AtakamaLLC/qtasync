@@ -18,22 +18,13 @@ Much of the `qtasync.qasyncio` module was derived from [qasync](https://github.c
 
 ## Installation
 
-`qtasync` is not yet on PyPi, so it must be installed from GitHub.
+`qtasync` is [available on pypi](https://pypi.org/project/qtasync/) and can be installed with pip or poetry.
 
 ### pip
-Using ssh:
-`pip install git+ssh://git@github.com/AtakamaLLC/QtAsync.git@main`
-
-Using https:
-`pip install git+https://github.com/AtakamaLLC/QtAsync.git@main`
+`pip install qtasync`
 
 ### poetry
-Using ssh:
-`poetry add git+ssh://git@github.com/AtakamaLLC/QtAsync.git#main`
-
-Using https:
-`poetry add git+https://github.com/AtakamaLLC/QtAsync.git#main`
-
+`poetry add qtasync`
 
 ## Use
 
