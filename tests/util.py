@@ -4,12 +4,12 @@ import sys
 from typing import TYPE_CHECKING, Optional, Callable
 from unittest.mock import Mock
 
-from QtAsync._env import QObject, QApplication, QtModuleName, PYQT6_MODULE_NAME, QEvent
-from QtAsync.types.unbound import MESSAGE_HANDLER_TYPE, SIGNAL_TYPE
-from QtAsync._util import install_custom_qt_message_handler
+from qtasync._env import QObject, QApplication, QtModuleName, PYQT6_MODULE_NAME, QEvent
+from qtasync.types.unbound import MESSAGE_HANDLER_TYPE, SIGNAL_TYPE
+from qtasync._util import install_custom_qt_message_handler
 
 if TYPE_CHECKING:
-    from QtAsync._env import QtCore
+    from qtasync._env import QtCore
     from tests.conftest import QtTestContext
 
 

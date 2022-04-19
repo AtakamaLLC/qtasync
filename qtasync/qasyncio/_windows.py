@@ -12,12 +12,12 @@ except ImportError:  # noqa
 
 import math
 
-from QtAsync.qasyncio._util import _make_signaller
-from QtAsync.qasyncio._loop import _QEventLoop
-from QtAsync._env import QMutex, QMutexLocker, QThread, QSemaphore
+from qtasync.qasyncio._util import _make_signaller
+from qtasync.qasyncio._loop import _QEventLoop
+from qtasync._env import QMutex, QMutexLocker, QThread, QSemaphore
 
 if TYPE_CHECKING:
-    from QtAsync._env import QObject
+    from qtasync._env import QObject
 
 
 log = logging.getLogger(__name__)

@@ -1,12 +1,12 @@
 import threading
 from typing import TYPE_CHECKING, Optional
 
-from QtAsync._env import QThread
-from QtAsync._util import qt_timeout
-from QtAsync.types.bound import PYTHON_TIME
+from qtasync._env import QThread
+from qtasync._util import qt_timeout
+from qtasync.types.bound import PYTHON_TIME
 
 if TYPE_CHECKING:
-    from QtAsync._env import QObject
+    from qtasync._env import QObject
 
 
 class QtThread(QThread):

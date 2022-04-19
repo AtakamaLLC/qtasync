@@ -3,7 +3,7 @@ import logging
 from typing import TYPE_CHECKING, Optional
 from pytest import fixture
 
-from QtAsync._env import QtDebugMsg, QtInfoMsg, QtWarningMsg, QtCriticalMsg, QtFatalMsg
+from qtasync._env import QtDebugMsg, QtInfoMsg, QtWarningMsg, QtCriticalMsg, QtFatalMsg
 from tests.util import (
     TempQObject,
     replace_log_level,
@@ -12,7 +12,7 @@ from tests.util import (
 )
 
 if TYPE_CHECKING:
-    from QtAsync._env import QtCore
+    from qtasync._env import QtCore
 
 
 logging.basicConfig(
@@ -28,7 +28,7 @@ else:
 
 @fixture(scope="session")
 def application():
-    from QtAsync._env import QCoreApplication
+    from qtasync._env import QCoreApplication
 
     return QCoreApplication.instance() or QCoreApplication([])
 
