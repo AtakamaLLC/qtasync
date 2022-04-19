@@ -10,7 +10,7 @@ utilizing the `QCoreApplication` event loop as a `asyncio.BaseEventLoop`.
 
 ## Installation
 
-`QtAsync` is not yet on PyPi, so it must be installed from GitHub.
+`qtasync` is not yet on PyPi, so it must be installed from GitHub.
 
 ### pip
 Using ssh:
@@ -33,12 +33,12 @@ If you have multiple Python implementations of Qt installed, aet the `QT_API` en
 library you want to use (`PySide2`, `PySide6`, `PyQt5`, or `PyQt6`)
 
 There are three modules in this library to implement Qt-compatible versions of `threading`, `concurrent`, and `asyncio`.
-and they are named similarly: `QtAsync.qthreading`, `QtAsync.qconcurrent`, and `QtAsync.qasyncio`.
+and they are named similarly: `qtasync.qthreading`, `qtasync.qconcurrent`, and `qtasync.qasyncio`.
 
 The nomenclature is different from the Python modules and classes they mimic to resolve ambiguity and prevent namespace
 issues. The objects defined here are prefixed with "Qt".
 
-For example, `QtAsync.qthreading.QtRLock` is a Qt-friendly implementation of `threading.RLock`. The interface is largely
+For example, `qtasync.qthreading.QtRLock` is a Qt-friendly implementation of `threading.RLock`. The interface is largely
 the same as the Python equivalent and can be used interchangeably in many cases.
 
 
@@ -47,26 +47,26 @@ the same as the Python equivalent and can be used interchangeably in many cases.
 ### Threading
 | Python Class | QtAsync Class |
 | ------------ | ---------- |
-| `threading.Lock` | `QtAsync.qthreading.QtLock` |
-| `threading.RLock` | `QtAsync.qthreading.QtRLock` |
-| `threading.Condition` | `QtAsync.qthreading.QtCondition` |
-| `threading.Event` | `QtAsync.qthreading.QtEvent` |
-| `threading.Semaphore` | `QtAsync.qthreading.QtSemaphore` |
-| `threading.Thread` | `QtAsync.qthreading.QtThread` |
-| `threading.Timer` | `QtAsync.qthreading.QtTimer` |
+| `threading.Lock` | `qtasync.qthreading.QtLock` |
+| `threading.RLock` | `qtasync.qthreading.QtRLock` |
+| `threading.Condition` | `qtasync.qthreading.QtCondition` |
+| `threading.Event` | `qtasync.qthreading.QtEvent` |
+| `threading.Semaphore` | `qtasync.qthreading.QtSemaphore` |
+| `threading.Thread` | `qtasync.qthreading.QtThread` |
+| `threading.Timer` | `qtasync.qthreading.QtTimer` |
 
 ### Concurrent
 | Python Class | QtAsync Class |
 | ------------ | ---------- |
-| `concurrent.futures.Future` | `QtAsync.qconcurrent.QtFuture` |
-| `concurrent.futures.ThreadPoolExecutor` | `QtAsync.qconcurrent.QtThreadPoolExecutor` |
+| `concurrent.futures.Future` | `qtasync.qconcurrent.QtFuture` |
+| `concurrent.futures.ThreadPoolExecutor` | `qtasync.qconcurrent.QtThreadPoolExecutor` |
 
 ### Asyncio
 
 | Python Class | QtAsync Class |
 | ------------ | ---------- |
-| `asyncio.ProactorEventLoop` | `QtAsync.qasyncio.QtProactorEventLoop` |
-| `asyncio.SelectorEventLoop` | `QtAsync.qasyncio.QtSelectorEventLoop` |
+| `asyncio.ProactorEventLoop` | `qtasync.qasyncio.QtProactorEventLoop` |
+| `asyncio.SelectorEventLoop` | `qtasync.qasyncio.QtSelectorEventLoop` |
 
 Additionally, there is a third object, `QtEventLoop`, which will select one of the two above implementations
 depending on the active operating system. If running Windows, use `QtProactorEventLoop`, and if not, use
